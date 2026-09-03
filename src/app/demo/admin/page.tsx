@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useOrders,
   updateOrderStatus,
@@ -19,15 +19,28 @@ const statusLabels: Record<OrderStatus, { fa: string; en: string; color: string 
 
 const statusOrder: OrderStatus[] = ["received", "preparing", "ready", "completed"];
 
+function formatTime(date: Date): string {
+  try {
+    const h = date.getHours().toString().padStart(2, "0");
+    const m = date.getMinutes().toString().padStart(2, "0");
+    return `${h}:${m}`;
+  } catch {
+    return "--:--";
+  }
+}
+
 export default function AdminPage() {
   const orders = useOrders();
   const [activeStatus, setActiveStatus] = useState<OrderStatus | "all">("all");
   const [menuToggle, setMenuToggle] = useState(
-    menuItems.map((item) => ({ ...item }))
+    () => menuItems.map((item) => ({ ...item }))
   );
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  const filteredOrders = activeStatus === "all" ? orders : orders.filter((o) => o.status === activeStatus);
+  const filteredOrders = useMemo(
+    () => activeStatus === "all" ? orders : orders.filter((o) => o.status === activeStatus),
+    [orders, activeStatus]
+  );
 
   const toggleField = (id: string, field: "available" | "isBestseller" | "isNew") => {
     setMenuToggle((prev) =>
@@ -41,8 +54,8 @@ export default function AdminPage() {
     updateOrderStatus(orderId, newStatus);
   };
 
-  const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
-  const activeOrders = orders.filter((o) => o.status !== "completed").length;
+  const totalRevenue = useMemo(() => orders.reduce((s, o) => s + o.total, 0), [orders]);
+  const activeOrders = useMemo(() => orders.filter((o) => o.status !== "completed").length, [orders]);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] p-6">
@@ -153,7 +166,7 @@ export default function AdminPage() {
                       <div>
                         <span className="font-mono font-bold text-sm text-[#ccc]">#{order.id}</span>
                         <span className="mr-3 text-xs text-[#555]">
-                          {order.createdAt.toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })}
+                          {formatTime(order.createdAt)}
                         </span>
                       </div>
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${info.color}`}>
@@ -187,11 +200,10 @@ export default function AdminPage() {
                     <div className="flex gap-2">
                       {statusOrder.map((nextStatus) => {
                         const isCurrent = order.status === nextStatus;
-                        const isNextAllowed =
-                          statusOrder.indexOf(nextStatus) === statusOrder.indexOf(order.status) + 1 ||
-                          (statusOrder.indexOf(nextStatus) === statusOrder.indexOf(order.status) - 1);
-                        if (isCurrent) return null;
-                        if (!isNextAllowed) return null;
+                        const nextIdx = statusOrder.indexOf(nextStatus);
+                        const curIdx = statusOrder.indexOf(order.status);
+                        const isAdjacent = nextIdx === curIdx + 1 || nextIdx === curIdx - 1;
+                        if (isCurrent || !isAdjacent) return null;
                         const nextInfo = statusLabels[nextStatus];
                         return (
                           <button
