@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { CreditCard, Banknote, AlertCircle } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
-import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { menuItems } from "@/lib/data";
 import { formatPrice, calculateItemPrice, generateOrderId, getEstimatedTime } from "@/lib/utils";
+import { createOrder } from "@/lib/hooks/use-orders";
 import { Button } from "@/components/ui/button";
 import type { Locale } from "@/lib/types";
 
@@ -16,8 +15,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
-  const { items, table, orderType, subtotal, discount, total, clearCart } = useCartContext();
-  const { locale: ctxLocale } = useLocaleContext();
+  const { items, table, orderType, subtotal, total, clearCart } = useCartContext();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,6 +28,16 @@ export default function CheckoutPage() {
   const handlePlaceOrder = () => {
     setIsPlacing(true);
     const orderId = generateOrderId();
+    createOrder({
+      id: orderId,
+      items,
+      table,
+      orderType,
+      total,
+      customerName: name || undefined,
+      customerPhone: phone || undefined,
+      notes: notes || undefined,
+    });
     setTimeout(() => {
       clearCart();
       router.push(`/${locale}/order/success?id=${orderId}${table ? `&table=${table}` : ""}&time=${estimatedTime}`);

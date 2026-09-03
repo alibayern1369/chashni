@@ -1,6 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* Premium dark theme custom properties */
 :root {
@@ -18,16 +16,16 @@
 body {
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-vazirmatn-variable), system-ui, sans-serif;
 }
 
 [dir="rtl"] {
-  font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif;
+  font-family: var(--font-vazirmatn-variable), system-ui, sans-serif;
   text-align: right;
 }
 
 [dir="ltr"] {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-vazirmatn-variable), system-ui, sans-serif;
   text-align: left;
 }
 
