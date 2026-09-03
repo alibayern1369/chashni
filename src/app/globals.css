@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Premium dark theme custom properties */
+:root {
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-surface-2: #1e1e1e;
+  --color-surface-3: #252525;
+  --color-accent: #f59e0b;
+  --color-accent-dark: #d97706;
+  --color-text: #faf5e4;
+  --color-text-muted: #8a8275;
+  --color-border: #2a2a2a;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+[dir="rtl"] {
+  font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif;
+  text-align: right;
+}
+
+[dir="ltr"] {
+  font-family: 'Inter', system-ui, sans-serif;
+  text-align: left;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+html { scroll-behavior: smooth; }
+
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
