@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useOrders,
   updateOrderStatus,
@@ -19,10 +19,10 @@ const statusLabels: Record<OrderStatus, { fa: string; en: string; color: string 
 
 const statusOrder: OrderStatus[] = ["received", "preparing", "ready", "completed"];
 
-function formatTime(date: Date): string {
+function safeFormatTime(date: Date): string {
   try {
-    const h = date.getHours().toString().padStart(2, "0");
-    const m = date.getMinutes().toString().padStart(2, "0");
+    const h = String(date.getHours()).padStart(2, "0");
+    const m = String(date.getMinutes()).padStart(2, "0");
     return `${h}:${m}`;
   } catch {
     return "--:--";
@@ -30,6 +30,11 @@ function formatTime(date: Date): string {
 }
 
 export default function AdminPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const orders = useOrders();
   const [activeStatus, setActiveStatus] = useState<OrderStatus | "all">("all");
   const [menuToggle, setMenuToggle] = useState(
@@ -56,6 +61,14 @@ export default function AdminPage() {
 
   const totalRevenue = useMemo(() => orders.reduce((s, o) => s + o.total, 0), [orders]);
   const activeOrders = useMemo(() => orders.filter((o) => o.status !== "completed").length, [orders]);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] flex items-center justify-center">
+        <p className="text-[#555]">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] p-6">
@@ -166,7 +179,7 @@ export default function AdminPage() {
                       <div>
                         <span className="font-mono font-bold text-sm text-[#ccc]">#{order.id}</span>
                         <span className="mr-3 text-xs text-[#555]">
-                          {formatTime(order.createdAt)}
+                          {safeFormatTime(order.createdAt)}
                         </span>
                       </div>
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${info.color}`}>
@@ -184,7 +197,6 @@ export default function AdminPage() {
                       {order.notes && <p className="text-[#666] italic">یادداشت: {order.notes}</p>}
                     </div>
 
-                    {/* Order items */}
                     <div className="mb-3 rounded-xl bg-[#0a0a0a] p-3 space-y-1">
                       {order.items.map((item, i) => {
                         const mi = menuItems.find((m) => m.id === item.menuItemId);
@@ -196,7 +208,6 @@ export default function AdminPage() {
                       })}
                     </div>
 
-                    {/* Status actions */}
                     <div className="flex gap-2">
                       {statusOrder.map((nextStatus) => {
                         const isCurrent = order.status === nextStatus;
