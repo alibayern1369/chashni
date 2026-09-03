@@ -1,9 +1,21 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import type { CartItem, CartState } from "@/lib/types";
 import { menuItems } from "@/lib/data";
-import { calculateCartTotal, calculateItemPrice } from "@/lib/utils";
+import { calculateCartTotal } from "@/lib/utils";
+
+const STORAGE_KEY = "chashni-cart";
+
+function getStoredCart(): CartState {
+  if (typeof window === "undefined") return { items: [], orderType: "dine-in" };
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? (JSON.parse(stored) as CartState) : { items: [], orderType: "dine-in" };
+  } catch {
+    return { items: [], orderType: "dine-in" };
+  }
+}
 
 interface CartContextValue {
   items: CartItem[];
@@ -41,10 +53,15 @@ export function useCartContext() {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<CartState>({
-    items: [],
-    orderType: "dine-in",
-  });
+  const [state, setState] = useState<CartState>(() => getStoredCart());
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // ignore storage errors
+    }
+  }, [state]);
 
   const addItem = useCallback((item: CartItem) => {
     setState((prev) => ({ ...prev, items: [...prev.items, item] }));

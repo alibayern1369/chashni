@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Check, ChefHat, Clock, CheckCircle2 } from "lucide-react";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
@@ -53,7 +53,6 @@ export function OrderTimeline({ initialStatus = "received", autoProgress = false
         const Icon = statusIcons[status.key];
         const isCompleted = index < currentIndex;
         const isCurrent = index === currentIndex;
-        const isPending = index > currentIndex;
 
         return (
           <div key={status.key} className="flex gap-4">
