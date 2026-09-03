@@ -2,8 +2,10 @@ import type { Order, OrderStatus, CartItem } from "@/lib/types";
 
 const STORAGE_KEY = "chashni-orders";
 const listeners: Set<() => void> = new Set();
+let cachedSnapshot: Order[] = [];
 
 function emitChange() {
+  cachedSnapshot = getStoredOrders();
   for (const listener of listeners) listener();
 }
 
@@ -30,11 +32,15 @@ function saveOrders(orders: Order[]) {
 
 export function subscribeOrders(callback: () => void): () => void {
   listeners.add(callback);
-  return () => listeners.delete(callback);
+  return () => { listeners.delete(callback); };
 }
 
 export function getOrdersSnapshot(): Order[] {
-  return getStoredOrders();
+  return cachedSnapshot;
+}
+
+export function initOrdersSnapshot() {
+  cachedSnapshot = getStoredOrders();
 }
 
 export function createOrder(params: {

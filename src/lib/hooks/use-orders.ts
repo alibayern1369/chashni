@@ -1,9 +1,10 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
   subscribeOrders,
   getOrdersSnapshot,
+  initOrdersSnapshot,
   createOrder as createOrderFn,
   updateOrderStatus as updateStatusFn,
   clearAllOrders as clearAllOrdersFn,
@@ -11,6 +12,9 @@ import {
 import type { Order, OrderStatus, CartItem } from "@/lib/types";
 
 export function useOrders(): Order[] {
+  useEffect(() => {
+    initOrdersSnapshot();
+  }, []);
   return useSyncExternalStore(subscribeOrders, getOrdersSnapshot, () => []);
 }
 
