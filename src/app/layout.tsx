@@ -35,5 +35,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <html lang="fa" dir="rtl" className="h-full antialiased">
+      <body className="min-h-full flex flex-col bg-[#0a0a0a]">{children}</body>
+    </html>
+  );
 }

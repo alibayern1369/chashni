@@ -32,8 +32,7 @@ export default function AdminPage() {
   };
 
   return (
-    <html lang="en" dir="ltr">
-      <body className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] p-6">
+    <div className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] p-6">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8">
             <h1 className="text-2xl font-black tracking-tight mb-1">Demo Admin Interface</h1>
@@ -172,7 +171,6 @@ export default function AdminPage() {
             </div>
           </section>
         </div>
-      </body>
-    </html>
+    </div>
   );
 }

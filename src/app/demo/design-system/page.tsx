@@ -25,8 +25,7 @@ export default function DesignSystemPage() {
   const sampleItem = menuItems[0];
 
   return (
-    <html lang="en" dir="ltr">
-      <body className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] p-6">
+    <div className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] p-6">
         <div className="mx-auto max-w-4xl">
           <div className="mb-10">
             <h1 className="text-3xl font-black tracking-tight mb-1">Design System</h1>
@@ -284,7 +283,6 @@ export default function DesignSystemPage() {
             )}
           </section>
         </div>
-      </body>
-    </html>
+    </div>
   );
 }
