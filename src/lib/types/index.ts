@@ -66,9 +66,9 @@ export interface CustomBurger {
   name?: string;
   bun: string;
   patty: string;
-  cheese: string;
+  cheese: string[];
   toppings: string[];
-  sauce: string;
+  sauce: string[];
 }
 
 export interface CartItem {
@@ -117,6 +117,20 @@ export interface Restaurant {
   phone: string;
   branches: Branch[];
   hours: { open: string; close: string };
+}
+
+export interface RestaurantSettings {
+  nameFa: string;
+  nameEn: string;
+  sloganFa: string;
+  sloganEn: string;
+  addressFa: string;
+  addressEn: string;
+  phone: string;
+  hours: { open: string; close: string };
+  designerName: string;
+  designerUrl: string;
+  logoEmoji: string;
 }
 
 export interface FilterOptions {

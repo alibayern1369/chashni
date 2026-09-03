@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
-import type { CartItem, Locale, MenuItem } from "../types";
+import type { CartItem, Locale, MenuItem, CustomBurger } from "../types";
+import { burgerOptions } from "../data";
 
 export function cn(...classes: ClassValue[]): string {
   return clsx(...classes);
@@ -23,7 +24,63 @@ export function formatPrice(price: number, locale: Locale): string {
   return `${formatted} Toman`;
 }
 
+function findBurgerOpt(catId: string, optId: string) {
+  const cat = burgerOptions.find((c) => c.id === catId);
+  return cat?.options.find((o) => o.id === optId);
+}
+
+export function calculateCustomBurgerPrice(burger: CustomBurger): number {
+  let price = 0;
+  const bun = findBurgerOpt("bun", burger.bun);
+  if (bun) price += bun.price;
+  const patty = findBurgerOpt("patty", burger.patty);
+  if (patty) price += patty.price;
+  for (const cheeseId of burger.cheese) {
+    const opt = findBurgerOpt("cheese", cheeseId);
+    if (opt) price += opt.price;
+  }
+  for (const toppingId of burger.toppings) {
+    const opt = findBurgerOpt("toppings", toppingId);
+    if (opt) price += opt.price;
+  }
+  for (const sauceId of burger.sauce) {
+    const opt = findBurgerOpt("sauce", sauceId);
+    if (opt) price += opt.price;
+  }
+  return price;
+}
+
+export function calculateCustomBurgerCalories(burger: CustomBurger): number {
+  let cal = 0;
+  const bun = findBurgerOpt("bun", burger.bun);
+  if (bun) cal += bun.calories;
+  const patty = findBurgerOpt("patty", burger.patty);
+  if (patty) cal += patty.calories;
+  for (const cheeseId of burger.cheese) {
+    const opt = findBurgerOpt("cheese", cheeseId);
+    if (opt) cal += opt.calories;
+  }
+  for (const toppingId of burger.toppings) {
+    const opt = findBurgerOpt("toppings", toppingId);
+    if (opt) cal += opt.calories;
+  }
+  for (const sauceId of burger.sauce) {
+    const opt = findBurgerOpt("sauce", sauceId);
+    if (opt) cal += opt.calories;
+  }
+  return cal;
+}
+
+export function getCustomBurgerName(burger: CustomBurger, locale: Locale): string {
+  if (burger.name) return burger.name;
+  return locale === "fa" ? "برگر سفارشی" : "Custom Burger";
+}
+
 export function calculateItemPrice(item: CartItem, menuItems: MenuItem[]): number {
+  if (item.menuItemId === "custom-burger" && item.customBurger) {
+    return calculateCustomBurgerPrice(item.customBurger) * item.quantity;
+  }
+
   const menuItem = menuItems.find((m) => m.id === item.menuItemId);
   if (!menuItem) return 0;
 
@@ -68,6 +125,7 @@ export function getEstimatedTime(items: CartItem[], menuItems: MenuItem[]): numb
   if (items.length === 0) return 0;
   return Math.max(
     ...items.map((item) => {
+      if (item.menuItemId === "custom-burger") return 15;
       const mi = menuItems.find((m) => m.id === item.menuItemId);
       return mi?.preparationTime ?? 0;
     })

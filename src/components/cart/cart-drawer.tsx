@@ -1,11 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Minus, Trash2, ShoppingBag, Plus } from "lucide-react";
+import { X, ShoppingBag, Plus } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
-import { menuItems } from "@/lib/data";
-import { cn, formatPrice, calculateItemPrice, calculateCartTotal } from "@/lib/utils";
+import { menuItems, burgerOptions } from "@/lib/data";
+import { cn, formatPrice, calculateItemPrice, getCustomBurgerName } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { QuantityControl } from "@/components/ui/quantity-control";
@@ -17,8 +17,20 @@ interface CartDrawerProps {
   className?: string;
 }
 
+function getBurgerDetailNames(ids: string[], catId: string, locale: string): string {
+  const cat = burgerOptions.find((c) => c.id === catId);
+  if (!cat) return "";
+  return ids
+    .map((id) => {
+      const opt = cat.options.find((o) => o.id === id);
+      return opt ? (locale === "fa" ? opt.nameFa : opt.nameEn) : "";
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawerProps) {
-  const { items, removeItem, updateQuantity, table, total, subtotal, discount, itemCount } =
+  const { items, removeItem, updateQuantity, table, total, subtotal, discount } =
     useCartContext();
   const { locale } = useLocaleContext();
 
@@ -80,10 +92,16 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
                 ) : (
                   <div className="space-y-3">
                     {items.map((cartItem, index) => {
-                      const menuItem = menuItems.find((m) => m.id === cartItem.menuItemId);
-                      if (!menuItem) return null;
-                      const name = locale === "fa" ? menuItem.nameFa : menuItem.nameEn;
+                      const isBurger = cartItem.menuItemId === "custom-burger";
+                      const menuItem = !isBurger ? menuItems.find((m) => m.id === cartItem.menuItemId) : null;
+                      const name = isBurger
+                        ? getCustomBurgerName(cartItem.customBurger!, locale)
+                        : menuItem
+                          ? (locale === "fa" ? menuItem.nameFa : menuItem.nameEn)
+                          : "";
                       const itemTotal = calculateItemPrice(cartItem, menuItems);
+
+                      if (!isBurger && !menuItem) return null;
 
                       return (
                         <motion.div
@@ -94,19 +112,42 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
                           exit={{ opacity: 0, x: -100 }}
                           className="flex gap-3 rounded-2xl bg-[#141414] border border-[#1e1e1e] p-3"
                         >
-                          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#1a1a1a]">
-                            <img
-                              src={menuItem.image}
-                              alt={name}
-                              className="h-full w-full object-cover"
-                            />
+                          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#1a1a1a] flex items-center justify-center">
+                            {isBurger ? (
+                              <span className="text-2xl">🍔</span>
+                            ) : (
+                              <img
+                                src={menuItem!.image}
+                                alt={name}
+                                className="h-full w-full object-cover"
+                              />
+                            )}
                           </div>
 
                           <div className="flex flex-1 flex-col justify-between min-w-0">
                             <div>
                               <h4 className="text-sm font-semibold text-[#faf5e4] truncate">{name}</h4>
-                              {Object.entries(cartItem.selectedOptions).map(([groupId, optIds]) => {
-                                const group = menuItem.options.find((g) => g.id === groupId);
+                              {isBurger && cartItem.customBurger && (
+                                <div className="text-[10px] text-[#666] space-y-0.5">
+                                  {cartItem.customBurger.bun && (
+                                    <p>{locale === "fa" ? "نان" : "Bun"}: {getBurgerDetailNames([cartItem.customBurger.bun], "bun", locale)}</p>
+                                  )}
+                                  {cartItem.customBurger.patty && (
+                                    <p>{locale === "fa" ? "پتی" : "Patty"}: {getBurgerDetailNames([cartItem.customBurger.patty], "patty", locale)}</p>
+                                  )}
+                                  {cartItem.customBurger.cheese.length > 0 && (
+                                    <p>{locale === "fa" ? "پنیر" : "Cheese"}: {getBurgerDetailNames(cartItem.customBurger.cheese, "cheese", locale)}</p>
+                                  )}
+                                  {cartItem.customBurger.toppings.length > 0 && (
+                                    <p>{locale === "fa" ? "تاسینگ" : "Toppings"}: {getBurgerDetailNames(cartItem.customBurger.toppings, "toppings", locale)}</p>
+                                  )}
+                                  {cartItem.customBurger.sauce.length > 0 && (
+                                    <p>{locale === "fa" ? "سس" : "Sauce"}: {getBurgerDetailNames(cartItem.customBurger.sauce, "sauce", locale)}</p>
+                                  )}
+                                </div>
+                              )}
+                              {!isBurger && Object.entries(cartItem.selectedOptions).map(([groupId, optIds]) => {
+                                const group = menuItem!.options.find((g) => g.id === groupId);
                                 if (!group) return null;
                                 const names = optIds.map((id) => {
                                   const opt = group.options.find((o) => o.id === id);
@@ -121,7 +162,7 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
                               })}
                             </div>
 
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between mt-1">
                               <QuantityControl
                                 value={cartItem.quantity}
                                 onChange={(qty) => updateQuantity(index, qty)}
@@ -135,7 +176,7 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
                                   onClick={() => removeItem(index)}
                                   className="text-[#555] hover:text-red-400 transition-colors"
                                 >
-                                  <Trash2 size={14} />
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 </button>
                               </div>
                             </div>

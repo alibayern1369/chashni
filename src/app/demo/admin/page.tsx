@@ -1,231 +1,163 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useMemo } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import {
-  useOrders,
-  updateOrderStatus,
-  clearAllOrders,
-} from "@/lib/hooks/use-orders";
-import { menuItems, categories } from "@/lib/data";
+  Receipt,
+  ClipboardList,
+  UtensilsCrossed,
+  QrCode,
+  Settings,
+  TrendingUp,
+  Timer,
+} from "lucide-react";
+import { useOrders } from "@/lib/hooks/use-orders";
+import { menuItems } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 import type { OrderStatus } from "@/lib/types";
 
-const statusLabels: Record<OrderStatus, { fa: string; en: string; color: string }> = {
-  received: { fa: "دریافت شد", en: "Received", color: "bg-blue-500/15 text-blue-400" },
-  preparing: { fa: "در حال آماده‌سازی", en: "Preparing", color: "bg-amber-500/15 text-amber-400" },
-  ready: { fa: "آماده تحویل", en: "Ready", color: "bg-emerald-500/15 text-emerald-400" },
-  completed: { fa: "تکمیل شد", en: "Completed", color: "bg-[#222] text-[#666]" },
+const statusLabels: Record<OrderStatus, string> = {
+  received: "Received",
+  preparing: "Preparing",
+  ready: "Ready",
+  completed: "Completed",
 };
 
-const statusOrder: OrderStatus[] = ["received", "preparing", "ready", "completed"];
+const statusColors: Record<OrderStatus, string> = {
+  received: "bg-blue-500/15 text-blue-400",
+  preparing: "bg-amber-500/15 text-amber-400",
+  ready: "bg-emerald-500/15 text-emerald-400",
+  completed: "bg-[#222] text-[#666]",
+};
 
-function safeFormatTime(date: Date): string {
-  try {
-    const h = String(date.getHours()).padStart(2, "0");
-    const m = String(date.getMinutes()).padStart(2, "0");
-    return `${h}:${m}`;
-  } catch {
-    return "--:--";
-  }
-}
+const quickLinks = [
+  { href: "/demo/admin/orders", label: "Manage Orders", sub: "Track and update order status", icon: ClipboardList },
+  { href: "/demo/admin/menu", label: "Menu Items", sub: "Toggle availability and badges", icon: UtensilsCrossed },
+  { href: "/demo/admin/qr", label: "QR Codes", sub: "Download table QR codes", icon: QrCode },
+  { href: "/demo/admin/settings", label: "Settings", sub: "Edit restaurant info", icon: Settings },
+];
 
-export default function AdminPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+export default function DashboardPage() {
   const orders = useOrders();
-  const [activeStatus, setActiveStatus] = useState<OrderStatus | "all">("all");
-  const [menuToggle, setMenuToggle] = useState(
-    () => menuItems.map((item) => ({ ...item }))
+
+  const totalRevenue = useMemo(
+    () => orders.reduce((s, o) => s + o.total, 0),
+    [orders]
   );
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-
-  const filteredOrders = useMemo(
-    () => activeStatus === "all" ? orders : orders.filter((o) => o.status === activeStatus),
-    [orders, activeStatus]
+  const activeOrders = useMemo(
+    () => orders.filter((o) => o.status !== "completed").length,
+    [orders]
   );
+  const recentOrders = useMemo(() => orders.slice(0, 5), [orders]);
 
-  const toggleField = (id: string, field: "available" | "isBestseller" | "isNew") => {
-    setMenuToggle((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, [field]: !item[field] } : item
-      )
-    );
-  };
-
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    updateOrderStatus(orderId, newStatus);
-  };
-
-  const totalRevenue = useMemo(() => orders.reduce((s, o) => s + o.total, 0), [orders]);
-  const activeOrders = useMemo(() => orders.filter((o) => o.status !== "completed").length, [orders]);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] flex items-center justify-center">
-        <p className="text-[#555]">Loading...</p>
-      </div>
-    );
-  }
+  const stats = [
+    {
+      label: "Total Orders",
+      value: orders.length.toString(),
+      icon: Receipt,
+      accent: "bg-amber-500/15 text-amber-400",
+    },
+    {
+      label: "Active Orders",
+      value: activeOrders.toString(),
+      icon: Timer,
+      accent: "bg-blue-500/15 text-blue-400",
+    },
+    {
+      label: "Revenue",
+      value: formatPrice(totalRevenue, "en"),
+      icon: TrendingUp,
+      accent: "bg-emerald-500/15 text-emerald-400",
+    },
+    {
+      label: "Menu Items",
+      value: menuItems.length.toString(),
+      icon: UtensilsCrossed,
+      accent: "bg-purple-500/15 text-purple-400",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#faf5e4] p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-black tracking-tight mb-1">پنل مدیریت — Admin Dashboard</h1>
-          <p className="text-sm text-[#888]">
-            {orders.length} سفارش ثبت شده — {activeOrders} فعال — {formatPrice(totalRevenue, "fa")} درآمد
-          </p>
-        </div>
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
+        <p className="mt-1 text-sm text-[#888]">Overview of CHASHNI orders and activity</p>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          {(["received", "preparing", "ready", "completed"] as const).map((status) => {
-            const count = orders.filter((o) => o.status === status).length;
-            const info = statusLabels[status];
-            return (
-              <div
-                key={status}
-                className={`rounded-2xl border border-[#1e1e1e] p-4 ${count > 0 ? info.color : "text-[#555]"}`}
-              >
-                <p className="text-3xl font-black">{count}</p>
-                <p className="text-xs font-semibold mt-1">{info.fa}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-          <button
-            onClick={() => setActiveStatus("all")}
-            className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-bold transition-colors ${
-              activeStatus === "all"
-                ? "bg-amber-500 text-black"
-                : "bg-[#141414] text-[#666] hover:text-[#aaa]"
-            }`}
+      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-5"
           >
-            همه ({orders.length})
-          </button>
-          {statusOrder.map((status) => {
-            const info = statusLabels[status];
-            const count = orders.filter((o) => o.status === status).length;
-            return (
-              <button
-                key={status}
-                onClick={() => setActiveStatus(status)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-bold transition-colors ${
-                  activeStatus === status
-                    ? "bg-amber-500 text-black"
-                    : "bg-[#141414] text-[#666] hover:text-[#aaa]"
-                }`}
-              >
-                {info.fa} ({count})
-              </button>
-            );
-          })}
-          <div className="flex-1" />
-          <button
-            onClick={() => setShowClearConfirm(true)}
-            className="shrink-0 rounded-full px-4 py-1.5 text-xs font-bold bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-          >
-            پاک کردن همه
-          </button>
-        </div>
-
-        {showClearConfirm && (
-          <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 p-4 flex items-center justify-between">
-            <p className="text-sm text-red-400">آیا از پاک کردن همه سفارشات مطمئنید؟</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { clearAllOrders(); setShowClearConfirm(false); }}
-                className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white"
-              >
-                بله، پاک کن
-              </button>
-              <button
-                onClick={() => setShowClearConfirm(false)}
-                className="rounded-lg bg-[#1e1e1e] px-3 py-1.5 text-xs font-bold text-[#888]"
-              >
-                لغو
-              </button>
+            <div
+              className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${stat.accent}`}
+            >
+              <stat.icon size={20} />
             </div>
-          </div>
-        )}
+            <p className="text-2xl font-black tabular-nums">{stat.value}</p>
+            <p className="mt-1 text-xs font-semibold text-[#666]">{stat.label}</p>
+          </motion.div>
+        ))}
+      </div>
 
-        {/* Orders list */}
-        <section className="mb-10">
-          <h2 className="text-lg font-bold mb-4">سفارشات — Orders</h2>
-          {filteredOrders.length === 0 ? (
-            <div className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-12 text-center">
-              <p className="text-[#555] text-sm">
-                {orders.length === 0
-                  ? "هنوز سفارشی ثبت نشده. از منو سفارش دهید."
-                  : "سفارشی در این دسته‌بندی وجود ندارد."}
-              </p>
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <section className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-5 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold">Recent Orders</h2>
+            <Link
+              href="/demo/admin/orders"
+              className="text-xs font-semibold text-amber-400 hover:text-amber-300"
+            >
+              View all →
+            </Link>
+          </div>
+
+          {recentOrders.length === 0 ? (
+            <div className="rounded-xl bg-[#0a0a0a] p-8 text-center">
+              <p className="text-sm text-[#555]">No orders yet</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredOrders.map((order) => {
-                const info = statusLabels[order.status];
+            <div className="space-y-2">
+              {recentOrders.map((order) => {
+                const names = order.items
+                  .map((item) => {
+                    if (item.menuItemId === "custom-burger") {
+                      return item.customBurger?.name || "Custom Burger";
+                    }
+                    const mi = menuItems.find((m) => m.id === item.menuItemId);
+                    return mi?.nameEn ?? item.menuItemId;
+                  })
+                  .join(", ");
                 return (
                   <div
                     key={order.id}
-                    className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-4"
+                    className="flex items-center justify-between gap-3 rounded-xl bg-[#0a0a0a] px-4 py-3"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <span className="font-mono font-bold text-sm text-[#ccc]">#{order.id}</span>
-                        <span className="mr-3 text-xs text-[#555]">
-                          {safeFormatTime(order.createdAt)}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-[#ccc]">
+                          #{order.id}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusColors[order.status]}`}
+                        >
+                          {statusLabels[order.status]}
                         </span>
                       </div>
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${info.color}`}>
-                        {info.fa}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-[#888] space-y-1 mb-3">
-                      <p>
-                        {order.table ? `میز ${order.table}` : "بیرون‌بر"} •{" "}
-                        {order.items.length} آیتم •{" "}
-                        <span className="text-amber-400 font-bold">{formatPrice(order.total, "fa")}</span>
+                      <p className="mt-1 truncate text-xs text-[#666]">
+                        {order.table ? `Table ${order.table}` : "Takeaway"} · {names}
                       </p>
-                      {order.customerName && <p>مشتری: {order.customerName}</p>}
-                      {order.notes && <p className="text-[#666] italic">یادداشت: {order.notes}</p>}
                     </div>
-
-                    <div className="mb-3 rounded-xl bg-[#0a0a0a] p-3 space-y-1">
-                      {order.items.map((item, i) => {
-                        const mi = menuItems.find((m) => m.id === item.menuItemId);
-                        return (
-                          <div key={i} className="flex justify-between text-xs text-[#666]">
-                            <span>{mi ? mi.nameFa : item.menuItemId} × {item.quantity}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex gap-2">
-                      {statusOrder.map((nextStatus) => {
-                        const isCurrent = order.status === nextStatus;
-                        const nextIdx = statusOrder.indexOf(nextStatus);
-                        const curIdx = statusOrder.indexOf(order.status);
-                        const isAdjacent = nextIdx === curIdx + 1 || nextIdx === curIdx - 1;
-                        if (isCurrent || !isAdjacent) return null;
-                        const nextInfo = statusLabels[nextStatus];
-                        return (
-                          <button
-                            key={nextStatus}
-                            onClick={() => handleStatusChange(order.id, nextStatus)}
-                            className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-colors"
-                          >
-                            → {nextInfo.fa}
-                          </button>
-                        );
-                      })}
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-bold text-amber-400 tabular-nums">
+                        {formatPrice(order.total, "en")}
+                      </p>
+                      <p className="text-[10px] text-[#555]">({order.items.length} items)</p>
                     </div>
                   </div>
                 );
@@ -234,90 +166,26 @@ export default function AdminPage() {
           )}
         </section>
 
-        {/* Menu management */}
-        <section className="mb-10">
-          <h2 className="text-lg font-bold mb-4">مدیریت منو — Menu Items ({menuToggle.length})</h2>
-          <div className="overflow-x-auto rounded-2xl border border-[#1e1e1e]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#1e1e1e] text-left text-xs text-[#666] uppercase tracking-wider">
-                  <th className="px-4 py-3">Item</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3 text-right">Price</th>
-                  <th className="px-4 py-3 text-center">Available</th>
-                  <th className="px-4 py-3 text-center">Bestseller</th>
-                  <th className="px-4 py-3 text-center">New</th>
-                </tr>
-              </thead>
-              <tbody>
-                {menuToggle.map((item) => {
-                  const cat = categories.find((c) => c.slug === item.categorySlug);
-                  return (
-                    <tr key={item.id} className="border-b border-[#141414] hover:bg-[#141414] transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg overflow-hidden bg-[#1a1a1a] shrink-0">
-                            <img src={item.image} alt="" className="h-full w-full object-cover" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-[#ccc]">{item.nameEn}</p>
-                            <p className="text-xs text-[#666]">{item.nameFa}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-[#888]">{cat?.nameEn || item.categorySlug}</td>
-                      <td className="px-4 py-3 text-right text-amber-400 font-medium tabular-nums">
-                        {formatPrice(item.basePrice, "en")}
-                      </td>
-                      {(["available", "isBestseller", "isNew"] as const).map((field) => (
-                        <td key={field} className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => toggleField(item.id, field)}
-                            className={`h-6 w-11 rounded-full transition-colors relative ${
-                              item[field] ? "bg-amber-500" : "bg-[#333]"
-                            }`}
-                          >
-                            <span
-                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                                item[field] ? "left-[22px]" : "left-0.5"
-                              }`}
-                            />
-                          </button>
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Table Management */}
-        <section>
-          <h2 className="text-lg font-bold mb-4">مدیریت میزها — Table Management</h2>
-          <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-12 gap-2">
-            {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0")).map((num) => {
-              const activeOrdersOnTable = orders.filter(
-                (o) => o.table === num && o.status !== "completed"
-              );
-              const isActive = activeOrdersOnTable.length > 0;
-              return (
-                <div
-                  key={num}
-                  className={`rounded-xl border p-3 text-center text-sm font-bold ${
-                    isActive
-                      ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                      : "bg-[#141414] border-[#1e1e1e] text-[#555]"
-                  }`}
-                >
-                  {num}
-                  <p className="text-[10px] font-normal mt-0.5">
-                    {isActive ? `${activeOrdersOnTable.length} سفارش` : "خالی"}
-                  </p>
+        <section className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-5">
+          <h2 className="mb-4 text-lg font-bold">Quick Actions</h2>
+          <div className="space-y-2">
+            {quickLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="group flex items-center gap-3 rounded-xl border border-[#1e1e1e] bg-[#0a0a0a] px-4 py-3 transition-colors hover:border-amber-500/40"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1e1e1e] text-[#666] transition-colors group-hover:bg-amber-500/15 group-hover:text-amber-400">
+                  <link.icon size={18} />
                 </div>
-              );
-            })}
+                <div>
+                  <p className="text-sm font-semibold text-[#ccc] group-hover:text-[#faf5e4]">
+                    {link.label}
+                  </p>
+                  <p className="text-[11px] text-[#666]">{link.sub}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
       </div>

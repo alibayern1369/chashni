@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { CreditCard, Banknote, AlertCircle } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { menuItems } from "@/lib/data";
-import { formatPrice, calculateItemPrice, generateOrderId, getEstimatedTime } from "@/lib/utils";
+import { formatPrice, calculateItemPrice, generateOrderId, getEstimatedTime, getCustomBurgerName } from "@/lib/utils";
 import { createOrder } from "@/lib/hooks/use-orders";
 import { Button } from "@/components/ui/button";
 import type { Locale } from "@/lib/types";
@@ -77,12 +77,19 @@ export default function CheckoutPage() {
               </h3>
               <div className="space-y-2">
                 {items.map((cartItem, i) => {
-                  const mi = menuItems.find((m) => m.id === cartItem.menuItemId);
-                  if (!mi) return null;
+                  const isBurger = cartItem.menuItemId === "custom-burger";
+                  const mi = !isBurger ? menuItems.find((m) => m.id === cartItem.menuItemId) : null;
+                  const name = isBurger
+                    ? getCustomBurgerName(cartItem.customBurger!, locale)
+                    : mi
+                      ? (isRtl ? mi.nameFa : mi.nameEn)
+                      : "";
                   return (
-                    <div key={i} className="flex justify-between text-sm text-[#888]">
-                      <span>{cartItem.quantity}x {isRtl ? mi.nameFa : mi.nameEn}</span>
-                      <span className="tabular-nums">{formatPrice(calculateItemPrice(cartItem, menuItems), locale)}</span>
+                    <div key={i} className="text-sm text-[#888]">
+                      <div className="flex justify-between">
+                        <span>{cartItem.quantity}x {name}</span>
+                        <span className="tabular-nums">{formatPrice(calculateItemPrice(cartItem, menuItems), locale)}</span>
+                      </div>
                     </div>
                   );
                 })}
