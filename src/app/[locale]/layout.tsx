@@ -12,6 +12,11 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { AppFooter } from "@/components/layout/app-footer";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SearchOverlay } from "@/components/search/search-overlay";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 import type { Locale } from "@/lib/types";
 
 export default function LocaleLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +26,7 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -28,8 +34,14 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
   }, [locale]);
 
   const handleLocaleChange = (target: Locale) => {
-    const restPath = pathname.replace(/^\/(fa|en)\b/, "");
-    router.push(`/${target}${restPath || "/menu"}`);
+    if (target === "fa") {
+      const rest = pathname.replace(/^\/r\/[^/]+/, "") || "";
+      router.push(restaurantPath(rest || "", slug));
+      return;
+    }
+    // English keeps legacy /en paths for now
+    const rest = pathname.replace(/^\/r\/[^/]+/, "") || "/menu";
+    router.push(`/en${rest}`);
   };
 
   const activeTab = pathname.includes("/cart")
@@ -61,13 +73,13 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
             activeTab={activeTab}
             onTabChange={(tab) => {
               const routes: Record<string, string> = {
-                home: `/${locale}`,
-                menu: `/${locale}/menu`,
-                build: `/${locale}/build-burger`,
-                favorites: `/${locale}/favorites`,
-                cart: `/${locale}/cart`,
+                home: restaurantPath("", slug),
+                menu: restaurantPath("/menu", slug),
+                build: restaurantPath("/build-burger", slug),
+                favorites: restaurantPath("/favorites", slug),
+                cart: restaurantPath("/cart", slug),
               };
-              router.push(routes[tab] || `/${locale}`);
+              router.push(routes[tab] || restaurantPath("", slug));
             }}
           />
 
@@ -81,7 +93,7 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
             onClose={() => setCartOpen(false)}
             onCheckout={() => {
               setCartOpen(false);
-              router.push(`/${locale}/checkout`);
+              router.push(restaurantPath("/checkout", slug));
             }}
           />
 

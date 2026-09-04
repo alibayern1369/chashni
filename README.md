@@ -379,11 +379,11 @@ Screenshots are captured against the **real running application** using Playwrig
 
 ## Platform links
 
-Full link map (super admin, menu, restaurant admin, landing, demo):
-
 - **[docs/LINKS.md](docs/LINKS.md)**
-- Interactive: [/site/links](/site/links)
-- Product landing: [/site](/site)
+- `/site` — لندینگ · `/site/links` — نقشه لینک‌ها · `/site/admin` — ادمین لندینگ
+- `/super` — سوپر ادمین · `/super/login`
+- `/r/chashni` — رستوران · `/r/chashni/menu` · `/r/chashni/admin`
+- `/demo` — دمو
 
 ---
 

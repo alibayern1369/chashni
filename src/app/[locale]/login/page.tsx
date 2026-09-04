@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-provider";
+import { restaurantPath, superPath } from "@/lib/routes";
 import type { Locale } from "@/lib/types";
 
 export default function LoginPage() {
@@ -40,7 +41,7 @@ export default function LoginPage() {
       setFormError(translateError(error, isRtl));
       return;
     }
-    router.push(`/${locale}/account`);
+      router.push(restaurantPath("/account"));
   };
 
   const handleBootstrap = async () => {
@@ -58,7 +59,6 @@ export default function LoginPage() {
       setLogin(data.username || "admin");
       setPassword(data.password || "admin");
       setFormError(null);
-      // Auto sign-in
       const { error: signErr } = await signIn(data.username || "admin", data.password || "admin");
       setBootstrapping(false);
       if (signErr) {
@@ -69,7 +69,7 @@ export default function LoginPage() {
         );
         return;
       }
-      router.push(`/${locale}/admin/super`);
+      router.push(superPath());
     } catch (e) {
       setBootstrapping(false);
       setFormError(String(e));

@@ -1,26 +1,30 @@
 import Link from "next/link";
+import { restaurantPath, sitePath, superPath } from "@/lib/routes";
 
 export default function PlatformLandingPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#faf5e4]">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(245,158,11,0.12),_transparent_55%)] pointer-events-none" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(245,158,11,0.12),_transparent_55%)]" />
 
       <header className="relative z-10 mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <span className="text-xl font-black tracking-tight">
           CHASHNI <span className="text-amber-400">Platform</span>
         </span>
-        <nav className="flex gap-3 text-sm">
-          <Link href="/site/links" className="text-[#888] hover:text-amber-400">
-            Links
+        <nav className="flex flex-wrap gap-3 text-sm">
+          <Link href={sitePath("/links")} className="text-[#888] hover:text-amber-400">
+            لینک‌ها
           </Link>
           <Link href="/demo/admin" className="text-[#888] hover:text-amber-400">
-            Demo
+            دمو
+          </Link>
+          <Link href={sitePath("/admin")} className="text-[#888] hover:text-amber-400">
+            ادمین لندینگ
           </Link>
           <Link
-            href="/fa/login"
+            href={superPath("/login")}
             className="rounded-xl bg-amber-500 px-3 py-1.5 font-bold text-black hover:bg-amber-400"
           >
-            Login
+            سوپر ادمین
           </Link>
         </nav>
       </header>
@@ -31,54 +35,53 @@ export default function PlatformLandingPage() {
         </p>
         <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight sm:text-6xl">
           منوی دیجیتال رستوران
-          <span className="block text-amber-400">با ماژول‌های اختیاری</span>
+          <span className="block text-amber-400">با آدرس‌های جدا و واضح</span>
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-base text-[#999] sm:text-lg">
-          هستهٔ منو و سفارش QR، به‌همراه پرداخت زرین‌پال، CMS لندینگ، میزها، آشپزخانه،
-          تخفیف، ارسال و باشگاه مشتریان — همه قابل روشن/خاموش از سوپرادمین.
+          سوپر ادمین، رستوران، لندینگ و دمو هر کدام مسیر خودشان را دارند.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/fa/menu"
+            href={restaurantPath("/menu")}
             className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-bold text-black hover:bg-amber-400"
           >
-            مشاهده منو
+            منوی رستوران چاشنی
+          </Link>
+          <Link
+            href={restaurantPath("/admin")}
+            className="rounded-2xl border border-[#333] bg-[#141414] px-6 py-3 text-sm font-bold text-[#ccc] hover:border-amber-500/40"
+          >
+            ادمین رستوران
+          </Link>
+          <Link
+            href={superPath()}
+            className="rounded-2xl border border-[#333] bg-[#141414] px-6 py-3 text-sm font-bold text-[#ccc] hover:border-amber-500/40"
+          >
+            سوپر ادمین
           </Link>
           <Link
             href="/demo/admin"
             className="rounded-2xl border border-[#333] bg-[#141414] px-6 py-3 text-sm font-bold text-[#ccc] hover:border-amber-500/40"
           >
-            دمو ادمین
-          </Link>
-          <Link
-            href="/fa/admin/super"
-            className="rounded-2xl border border-[#333] bg-[#141414] px-6 py-3 text-sm font-bold text-[#ccc] hover:border-amber-500/40"
-          >
-            سوپر ادمین
+            دمو
           </Link>
         </div>
 
-        <section className="mt-20 grid gap-4 text-left sm:grid-cols-3">
+        <section className="mt-20 grid gap-4 text-right sm:grid-cols-2 lg:grid-cols-4">
           {[
-            {
-              t: "هسته منو",
-              d: "دوزبانه، سفارشی‌سازی، Build Burger، سبد و چک‌اوت.",
-            },
-            {
-              t: "ماژولار",
-              d: "پرداخت، CMS، ارسال، وفاداری و رزرو فقط وقتی فعال باشند.",
-            },
-            {
-              t: "عملیاتی",
-              d: "آشپزخانه، میز QR، تخفیف، مدیا و پنل سوپر برای چند رستوران.",
-            },
+            { t: "/site", d: "لندینگ محصول و نقشه لینک‌ها" },
+            { t: "/super", d: "سوپر ادمین پلتفرم" },
+            { t: "/r/chashni", d: "منو و ادمین رستوران" },
+            { t: "/demo", d: "دمو پورتفولیو بدون auth" },
           ].map((card) => (
             <div
               key={card.t}
               className="rounded-2xl border border-[#1e1e1e] bg-[#121212]/80 p-5"
             >
-              <h2 className="text-lg font-bold text-amber-400">{card.t}</h2>
+              <h2 className="font-mono text-sm font-bold text-amber-400" dir="ltr">
+                {card.t}
+              </h2>
               <p className="mt-2 text-sm text-[#888]">{card.d}</p>
             </div>
           ))}

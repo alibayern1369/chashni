@@ -8,7 +8,6 @@ import {
   Receipt,
   UtensilsCrossed,
   LogOut,
-  Shield,
   ChefHat,
   Grid3x3,
   Settings as SettingsIcon,
@@ -20,12 +19,16 @@ import {
 import { useAuth } from "@/lib/auth/auth-provider";
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV_MODULES, type CatalogModuleId } from "@/lib/modules/catalog";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 import type { Locale } from "@/lib/types";
 
 type TabDef = {
   path: string;
   labelFa: string;
-  labelEn: string;
   icon: React.ReactNode;
   module?: CatalogModuleId;
 };
@@ -35,25 +38,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const locale = (params.locale as Locale) || "fa";
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
   const { user, loading, signOut } = useAuth();
-
-  useEffect(() => {
-    if (locale !== "fa") {
-      const rest = pathname.replace(`/${locale}`, "/fa") || "/fa/admin";
-      router.replace(rest);
-    }
-  }, [locale, pathname, router]);
 
   const [accessChecked, setAccessChecked] = useState(false);
   const [allowed, setAllowed] = useState(false);
-  const [superAdmin, setSuperAdmin] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [modules, setModules] = useState<string[]>([]);
 
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace(`/${locale}/login`);
+      router.replace(restaurantPath("/login", slug));
       return;
     }
 
@@ -69,13 +65,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (!accessRes.ok) {
           setAllowed(false);
           setAccessChecked(true);
-          router.replace(`/${locale}`);
+          router.replace(restaurantPath("", slug));
           return;
         }
 
         const access = await accessRes.json();
         setAllowed(true);
-        setSuperAdmin(!!access.isSuperAdmin);
         setRole(access.role ?? null);
 
         if (restaurantRes.ok) {
@@ -85,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       } catch {
         if (mounted) {
           setAllowed(false);
-          router.replace(`/${locale}`);
+          router.replace(restaurantPath("", slug));
         }
       } finally {
         if (mounted) setAccessChecked(true);
@@ -95,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => {
       mounted = false;
     };
-  }, [user, loading, locale, router]);
+  }, [user, loading, locale, router, slug]);
 
   if (loading || !accessChecked) {
     return (
@@ -110,15 +105,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isKitchenOnly = role === "kitchen";
 
   const tabDefs: TabDef[] = [
-    { path: "/admin/menu", labelFa: "منو", labelEn: "Menu", icon: <UtensilsCrossed size={16} />, module: "menu" },
-    { path: "/admin", labelFa: "سفارش‌ها", labelEn: "Orders", icon: <Receipt size={16} />, module: "orders" },
-    { path: "/admin/kitchen", labelFa: "آشپزخانه", labelEn: "Kitchen", icon: <ChefHat size={16} />, module: "orders" },
-    { path: "/admin/tables", labelFa: "میزها", labelEn: "Tables", icon: <Grid3x3 size={16} />, module: "tables" },
-    { path: "/admin/pages", labelFa: "لندینگ", labelEn: "Pages", icon: <LayoutTemplate size={16} />, module: "cms" },
-    { path: "/admin/promotions", labelFa: "تخفیف‌ها", labelEn: "Promos", icon: <TicketPercent size={16} />, module: "orders" },
-    { path: "/admin/media", labelFa: "تصاویر", labelEn: "Media", icon: <ImageIcon size={16} />, module: "menu" },
-    { path: "/admin/reservations", labelFa: "رزرو", labelEn: "Reservations", icon: <CalendarDays size={16} />, module: "reservations" },
-    { path: "/admin/settings", labelFa: "تنظیمات", labelEn: "Settings", icon: <SettingsIcon size={16} /> },
+    { path: "/admin/menu", labelFa: "منو", icon: <UtensilsCrossed size={16} />, module: "menu" },
+    { path: "/admin", labelFa: "سفارش‌ها", icon: <Receipt size={16} />, module: "orders" },
+    { path: "/admin/kitchen", labelFa: "آشپزخانه", icon: <ChefHat size={16} />, module: "orders" },
+    { path: "/admin/tables", labelFa: "میزها", icon: <Grid3x3 size={16} />, module: "tables" },
+    { path: "/admin/pages", labelFa: "لندینگ رستوران", icon: <LayoutTemplate size={16} />, module: "cms" },
+    { path: "/admin/promotions", labelFa: "تخفیف‌ها", icon: <TicketPercent size={16} />, module: "orders" },
+    { path: "/admin/media", labelFa: "تصاویر", icon: <ImageIcon size={16} />, module: "menu" },
+    { path: "/admin/reservations", labelFa: "رزرو", icon: <CalendarDays size={16} />, module: "reservations" },
+    { path: "/admin/settings", labelFa: "تنظیمات", icon: <SettingsIcon size={16} /> },
   ];
 
   const moduleEnabled = (mod?: CatalogModuleId) => {
@@ -130,49 +125,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const tabs = tabDefs
     .filter((t) => {
       if (!moduleEnabled(t.module ?? ADMIN_NAV_MODULES[t.path])) return false;
-      if (isKitchenOnly) {
-        return t.path === "/admin" || t.path === "/admin/kitchen";
-      }
+      if (isKitchenOnly) return t.path === "/admin" || t.path === "/admin/kitchen";
       return true;
     })
     .map((t) => ({
       ...t,
-      href: `/${locale}${t.path}`,
+      href: restaurantPath(t.path, slug),
       active:
         t.path === "/admin"
-          ? pathname === `/${locale}/admin`
+          ? pathname === restaurantPath("/admin", slug) || pathname.endsWith("/admin")
           : pathname.includes(t.path),
     }));
 
-  if (superAdmin) {
-    tabs.push({
-      path: "/admin/super",
-      href: `/${locale}/admin/super`,
-      labelFa: "پنل کل",
-      labelEn: "Super",
-      icon: <Shield size={16} />,
-      active: pathname.includes("/admin/super"),
-    });
-  }
-
   const handleSignOut = async () => {
     await signOut();
-    router.push(`/${locale}`);
+    router.push(restaurantPath("", slug));
   };
 
   return (
     <div className="min-h-screen pt-16" dir="rtl">
       <div className="mx-auto max-w-6xl px-4 py-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-black text-[#faf5e4]">
-              پنل مدیریت رستوران
-            </h1>
-            <p className="text-xs text-[#888]" dir="ltr">{user.email}</p>
+            <h1 className="text-2xl font-black text-[#faf5e4]">پنل مدیریت رستوران</h1>
+            <p className="text-xs text-[#888]" dir="ltr">
+              /r/{slug}/admin
+            </p>
           </div>
           <button
             onClick={handleSignOut}
-            className="self-start flex items-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-4 py-2.5 text-xs font-medium text-[#ccc] hover:border-red-500/40 hover:text-red-400 transition-colors"
+            className="flex items-center gap-2 self-start rounded-xl border border-[#333] bg-[#1e1e1e] px-4 py-2.5 text-xs font-medium text-[#ccc] hover:border-red-500/40 hover:text-red-400"
           >
             <LogOut size={14} />
             خروج
@@ -185,7 +167,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px shrink-0",
+                "flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors -mb-px",
                 tab.active
                   ? "border-amber-500 text-amber-400"
                   : "border-transparent text-[#888] hover:text-[#ccc]",

@@ -9,6 +9,11 @@ import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { useTable } from "@/lib/hooks";
 import { cn, toPersianDigits } from "@/lib/utils";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 
 interface AppHeaderProps {
   onSearchOpen?: () => void;
@@ -24,12 +29,19 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
   const router = useRouter();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
 
   const handleLocaleToggle = () => {
     const target = locale === "fa" ? "en" : "fa";
-    const restPath = pathname.replace(/^\/(fa|en)\b/, "");
+    setLocale(target);
     const search = table ? `?table=${table}` : "";
-    router.push(`/${target}${restPath || "/menu"}${search}`);
+    if (target === "fa") {
+      const rest = pathname.replace(/^\/r\/[^/]+/, "") || "/menu";
+      router.push(`${restaurantPath(rest, slug)}${search}`);
+    } else {
+      const rest = pathname.replace(/^\/r\/[^/]+/, "") || "/menu";
+      router.push(`/en${rest}${search}`);
+    }
   };
 
   useEffect(() => {
@@ -63,7 +75,11 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
           )}
 
           <button
-            onClick={() => router.push(user ? `/${locale}/account` : `/${locale}/login`)}
+            onClick={() =>
+              router.push(
+                user ? restaurantPath("/account", slug) : restaurantPath("/login", slug),
+              )
+            }
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
           >
             <User size={18} />

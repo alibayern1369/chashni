@@ -1,93 +1,72 @@
-# CHASHNI — Link Map
+# CHASHNI — نقشه لینک‌ها (جدا و واضح)
 
-Complete URL map for the platform. Each section is independent.
+چهار سطح جدا:
 
-Base URL examples use local `http://localhost:3000`. Replace with your deployed host.
-
----
-
-## 1) Super Admin — restaurants & users
-
-| Label | Path |
-|--------|------|
-| Super dashboard | `/fa/admin/super` |
-| Tenants (create restaurants + toggle modules) | `/fa/admin/super/tenants` |
-| Users & roles | `/fa/admin/super/users` |
-
-Requires a profile with `role = super_admin`. Login with **username + password** at `/fa/login`.
-
-First-time setup: if no super admin exists, the login page offers **Create admin / admin**.
-
-Super admin can create users and reset passwords at `/fa/admin/super/users`.
-
-**Modules toggled per tenant:** `menu`, `orders`, `tables`, `builder`, `favorites`, `cms`, `payment`, `delivery`, `loyalty`, `reservations`, `auth`.
+| سطح | پیشوند |
+|------|--------|
+| لندینگ پلتفرم | `/site` |
+| سوپر ادمین | `/super` |
+| رستوران | `/r/{slug}` مثلاً `/r/chashni` |
+| دمو | `/demo` |
 
 ---
 
-## 2) Customer menu
+## ۱) سوپر ادمین پلتفرم
 
-| Label | Path |
-|--------|------|
-| Menu (FA) | `/fa/menu` |
-| Menu with table context | `/fa/menu?table=07` |
-| Menu (EN) | `/en/menu` |
-| Build burger | `/fa/build-burger` |
-| Favorites | `/fa/favorites` |
-| Cart | `/fa/cart` |
-| Checkout | `/fa/checkout` |
-| My orders | `/fa/my-orders` |
-| Order tracking | `/fa/order/{orderId}` |
-| Table QR resolve | `/fa/qr/{qr_token}` |
-| Reserve table | `/fa/reserve` |
+| نقش | آدرس |
+|-----|------|
+| ورود | `/super/login` |
+| داشبورد | `/super` |
+| رستوران‌ها + ماژول‌ها | `/super/tenants` |
+| کاربران / ساخت یوزر / تغییر رمز | `/super/users` |
 
-Path-tenant (optional): `/t/{slug}/…` sets tenant via proxy.
+اگر سوپرادمین نباشد، در `/super/login` دکمهٔ ساخت `admin` / `admin` می‌آید.
 
 ---
 
-## 3) Restaurant admin (per tenant)
+## ۲) رستوران چاشنی — مشتری
 
-| Label | Path |
-|--------|------|
-| Login | `/fa/login` |
-| Orders | `/fa/admin` |
-| Menu CRUD | `/fa/admin/menu` |
-| Kitchen display | `/fa/admin/kitchen` |
-| Tables & QR | `/fa/admin/tables` |
-| Promotions | `/fa/admin/promotions` |
-| Media | `/fa/admin/media` |
-| Settings (+ Zarinpal merchant when `payment` on) | `/fa/admin/settings` |
-| Reservations | `/fa/admin/reservations` |
+| نقش | آدرس |
+|-----|------|
+| هوم | `/r/chashni` |
+| منو | `/r/chashni/menu` |
+| منو + میز | `/r/chashni/menu?table=07` |
+| سبد / چک‌اوت | `/r/chashni/cart` · `/r/chashni/checkout` |
+| ورود | `/r/chashni/login` |
 
-Requires `tenant_members` row (or super_admin). Kitchen role sees Orders + Kitchen only.
+آدرس‌های قدیمی `/fa/...` به `/r/chashni/...` ریدایرکت می‌شوند.
 
 ---
 
-## 4) Landing + landing admin
+## ۳) رستوران چاشنی — ادمین
 
-| Label | Path |
-|--------|------|
-| **Platform product landing** | `/site` |
-| **This link map (UI)** | `/site/links` |
-| Restaurant home (brand or CMS) | `/fa` |
-| Public CMS page by slug | `/fa/p/{slug}` |
-| CMS pages admin | `/fa/admin/pages` |
-| CMS page editor | `/fa/admin/pages/{id}` |
-
-Enable `cms` on the tenant, publish a page with slug `home` to replace the default restaurant home.
+| نقش | آدرس |
+|-----|------|
+| سفارش‌ها | `/r/chashni/admin` |
+| منو | `/r/chashni/admin/menu` |
+| آشپزخانه | `/r/chashni/admin/kitchen` |
+| میز و QR | `/r/chashni/admin/tables` |
+| لندینگ CMS رستوران | `/r/chashni/admin/pages` |
+| تنظیمات | `/r/chashni/admin/settings` |
 
 ---
 
-## 5) Demo (portfolio / mock — no auth)
+## ۴) لندینگ پلتفرم + ادمین لندینگ
 
-| Label | Path |
-|--------|------|
-| Demo admin dashboard | `/demo/admin` |
-| Demo orders | `/demo/admin/orders` |
-| Demo menu | `/demo/admin/menu` |
-| Demo QR | `/demo/admin/qr` |
-| Demo settings | `/demo/admin/settings` |
-| Design system | `/demo/design-system` |
-| QR table demo | `/fa/qr-demo` |
+| نقش | آدرس |
+|-----|------|
+| لندینگ محصول | `/site` (و `/` → `/site`) |
+| نقشه لینک‌ها | `/site/links` |
+| ادمین لندینگ پلتفرم | `/site/admin` |
+
+---
+
+## ۵) دمو
+
+| نقش | آدرس |
+|-----|------|
+| داشبورد دمو | `/demo/admin` |
+| دیزاین سیستم | `/demo/design-system` |
 
 ---
 
@@ -98,29 +77,13 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_DEFAULT_TENANT=chashni
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-ZARINPAL_MERCHANT_ID=          # optional global fallback
-ZARINPAL_SANDBOX=true          # optional
+NEXT_PUBLIC_BASE_URL=https://chashni-seven.vercel.app
 ```
-
-Per-tenant Zarinpal merchant: Admin → Settings → `payment.zarinpal_merchant_id` (when module `payment` is on).
 
 ## Migrations
 
-Run in order:
-
-1. `supabase/migrations/001_initial_schema.sql`
-2. `supabase/migrations/002_repair_schema.sql`
-3. `supabase/migrations/003_fix_encoding.sql`
-4. `supabase/migrations/004_platform_complete.sql`
-
-## Module on/off checklist
-
-- [ ] `payment` off → checkout only cashier; on → Zarinpal + cashier
-- [ ] `cms` off → default home; on + published `home` → CMS blocks
-- [ ] `delivery` off → no delivery type; on → address required
-- [ ] `builder` off → `/build-burger` redirects to menu
-- [ ] `reservations` off → admin nav hidden; `/reserve` API 403
-- [ ] `loyalty` off → no points; on → points after order for logged-in users
-- [ ] `favorites` → localStorage for guests; DB sync when logged in
-- [ ] `auth` on → login required to place orders
+1. `001_initial_schema.sql`
+2. `002_repair_schema.sql`
+3. `003_fix_encoding.sql`
+4. `004_platform_complete.sql`
+5. `005_username_login.sql`

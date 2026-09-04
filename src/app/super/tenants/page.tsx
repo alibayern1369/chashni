@@ -1,16 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
 import { Loader2, RefreshCw, Plus, Pencil, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MODULE_CATALOG } from "@/lib/modules/catalog";
-import type { Locale, Tenant } from "@/lib/types";
+import type { Tenant } from "@/lib/types";
 
 export default function SuperTenantsPage() {
-  const params = useParams();
-  const locale = (params.locale as Locale) || "fa";
-  const isRtl = locale === "fa";
+  const isRtl = true;
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

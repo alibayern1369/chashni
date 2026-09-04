@@ -80,8 +80,11 @@ export default function AdminTablesPage() {
   };
 
   const qrUrl = (table: DBTable) => {
-    const base = (process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/+$/, "");
-    return `${base}/${locale}/qr/${table.qr_token}`;
+    const base = (
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      (typeof window !== "undefined" ? window.location.origin : "")
+    ).replace(/\/+$/, "");
+    return `${base}/r/chashni/qr/${table.qr_token}`;
   };
 
   if (loading && tables.length === 0) {

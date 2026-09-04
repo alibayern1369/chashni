@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogOut, User as UserIcon, Loader2, Settings, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-provider";
+import { restaurantPath, superPath } from "@/lib/routes";
 import type { Locale } from "@/lib/types";
 
 export default function AccountPage() {
@@ -86,17 +87,23 @@ export default function AccountPage() {
               : "View your order history and statuses here."}
           </p>
           <Link
-            href={`/${locale}/my-orders`}
+            href={restaurantPath("/my-orders")}
             className="mt-6 inline-block w-full rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-black text-center hover:bg-amber-400"
           >
             {isRtl ? "مشاهده سفارش‌ها" : "View my orders"}
           </Link>
           <Link
-            href={`/${locale}/admin`}
+            href={restaurantPath("/admin")}
             className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-5 py-2.5 text-sm font-medium text-[#ccc] hover:border-amber-500/30 hover:text-amber-400 transition-colors"
           >
             <Settings size={16} />
             {isRtl ? "پنل مدیریت رستوران" : "Restaurant Admin"}
+          </Link>
+          <Link
+            href={superPath()}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#333] bg-[#1e1e1e] px-5 py-2.5 text-sm font-medium text-[#ccc] hover:border-amber-500/30 hover:text-amber-400"
+          >
+            سوپر ادمین
           </Link>
         </div>
       </div>
