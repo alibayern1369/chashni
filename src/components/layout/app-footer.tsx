@@ -1,5 +1,7 @@
+"use client";
+
 import { Globe } from "lucide-react";
-import { restaurant } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/lib/types";
 
@@ -16,6 +18,7 @@ const navLinks = [
 ];
 
 export function AppFooter({ locale = "fa", onLocaleChange, className }: AppFooterProps) {
+  const { restaurant } = useMenuContext();
   return (
     <footer className={cn("bg-[#0a0a0a] border-t border-[#1e1e1e]", className)}>
       <div className="mx-auto max-w-7xl px-4 py-12">

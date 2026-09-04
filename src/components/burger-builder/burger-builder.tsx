@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, ShoppingBag, Flame, DollarSign } from "lucide-react";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { useCartContext } from "@/lib/providers/cart-provider";
-import { burgerOptions } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { cn, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { BurgerCategory, BurgerOption } from "@/lib/types";
@@ -15,11 +15,11 @@ interface BurgerBuilderProps {
   onComplete?: () => void;
 }
 
-const steps = burgerOptions;
-
 export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
   const { locale } = useLocaleContext();
   const { addItem } = useCartContext();
+  const { burgerOptions } = useMenuContext();
+  const steps = burgerOptions;
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [burgerName, setBurgerName] = useState("");

@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Utensils, Sparkles, Clock, MapPin, Phone } from "lucide-react";
-import { categories, menuItems, restaurant } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 import { RestaurantStatus } from "@/components/restaurant/restaurant-status";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import type { Locale } from "@/lib/types";
 
 export default function HomePage() {
@@ -15,6 +15,7 @@ export default function HomePage() {
   const searchParams = useSearchParams();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
+  const { categories, menuItems, restaurant } = useMenuContext();
 
   const table = searchParams.get("table");
 

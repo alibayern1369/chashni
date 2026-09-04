@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CreditCard, Banknote, AlertCircle } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
-import { menuItems } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { formatPrice, calculateItemPrice, generateOrderId, getEstimatedTime, getCustomBurgerName } from "@/lib/utils";
 import { createOrder } from "@/lib/hooks/use-orders";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ export default function CheckoutPage() {
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
   const { items, table, orderType, subtotal, total, clearCart } = useCartContext();
+  const { menuItems } = useMenuContext();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");

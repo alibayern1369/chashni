@@ -1,5 +1,7 @@
+"use client";
+
 import { MapPin, Phone, Clock, ExternalLink } from "lucide-react";
-import { restaurant } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/lib/types";
 
@@ -9,6 +11,7 @@ interface RestaurantInfoProps {
 }
 
 export function RestaurantInfo({ locale = "fa", className }: RestaurantInfoProps) {
+  const { restaurant } = useMenuContext();
   return (
     <div className={cn("rounded-2xl bg-[#141414] border border-[#1e1e1e] p-5 space-y-4", className)}>
       <div>

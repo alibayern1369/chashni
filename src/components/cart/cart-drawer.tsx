@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Plus } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
-import { menuItems, burgerOptions } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { cn, formatPrice, calculateItemPrice, getCustomBurgerName } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { QuantityControl } from "@/components/ui/quantity-control";
+import type { BurgerCategory } from "@/lib/types";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ interface CartDrawerProps {
   className?: string;
 }
 
-function getBurgerDetailNames(ids: string[], catId: string, locale: string): string {
+function getBurgerDetailNames(ids: string[], catId: string, locale: string, burgerOptions: BurgerCategory[]): string {
   const cat = burgerOptions.find((c) => c.id === catId);
   if (!cat) return "";
   return ids
@@ -33,6 +34,7 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
   const { items, removeItem, updateQuantity, table, total, subtotal, discount } =
     useCartContext();
   const { locale } = useLocaleContext();
+  const { menuItems, burgerOptions } = useMenuContext();
 
   return (
     <AnimatePresence>
@@ -130,19 +132,19 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
                               {isBurger && cartItem.customBurger && (
                                 <div className="text-[10px] text-[#666] space-y-0.5">
                                   {cartItem.customBurger.bun && (
-                                    <p>{locale === "fa" ? "نان" : "Bun"}: {getBurgerDetailNames([cartItem.customBurger.bun], "bun", locale)}</p>
+                                    <p>{locale === "fa" ? "نان" : "Bun"}: {getBurgerDetailNames([cartItem.customBurger.bun], "bun", locale, burgerOptions)}</p>
                                   )}
                                   {cartItem.customBurger.patty && (
-                                    <p>{locale === "fa" ? "پتی" : "Patty"}: {getBurgerDetailNames([cartItem.customBurger.patty], "patty", locale)}</p>
+                                    <p>{locale === "fa" ? "پتی" : "Patty"}: {getBurgerDetailNames([cartItem.customBurger.patty], "patty", locale, burgerOptions)}</p>
                                   )}
                                   {cartItem.customBurger.cheese.length > 0 && (
-                                    <p>{locale === "fa" ? "پنیر" : "Cheese"}: {getBurgerDetailNames(cartItem.customBurger.cheese, "cheese", locale)}</p>
+                                    <p>{locale === "fa" ? "پنیر" : "Cheese"}: {getBurgerDetailNames(cartItem.customBurger.cheese, "cheese", locale, burgerOptions)}</p>
                                   )}
                                   {cartItem.customBurger.toppings.length > 0 && (
-                                    <p>{locale === "fa" ? "تاسینگ" : "Toppings"}: {getBurgerDetailNames(cartItem.customBurger.toppings, "toppings", locale)}</p>
+                                    <p>{locale === "fa" ? "تاسینگ" : "Toppings"}: {getBurgerDetailNames(cartItem.customBurger.toppings, "toppings", locale, burgerOptions)}</p>
                                   )}
                                   {cartItem.customBurger.sauce.length > 0 && (
-                                    <p>{locale === "fa" ? "سس" : "Sauce"}: {getBurgerDetailNames(cartItem.customBurger.sauce, "sauce", locale)}</p>
+                                    <p>{locale === "fa" ? "سس" : "Sauce"}: {getBurgerDetailNames(cartItem.customBurger.sauce, "sauce", locale, burgerOptions)}</p>
                                   )}
                                 </div>
                               )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter, usePathname } from "next/navigation";
+import { DataProvider } from "@/lib/providers/data-provider";
 import { CartProvider } from "@/lib/providers/cart-provider";
 import { LocaleProvider } from "@/lib/providers/locale-provider";
 import { ToastProvider } from "@/lib/providers/toast-provider";
@@ -41,6 +42,7 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
     : "home";
 
   return (
+    <DataProvider>
     <LocaleProvider initialLocale={locale}>
       <CartProvider>
         <ToastProvider>
@@ -88,5 +90,6 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
         </ToastProvider>
       </CartProvider>
     </LocaleProvider>
+    </DataProvider>
   );
 }

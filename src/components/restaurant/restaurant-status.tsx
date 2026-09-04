@@ -1,5 +1,7 @@
+"use client";
+
 import { Clock, MapPin, CircleDot } from "lucide-react";
-import { restaurant } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/lib/types";
 
@@ -16,6 +18,7 @@ export function RestaurantStatus({
   estimatedTime,
   className,
 }: RestaurantStatusProps) {
+  const { restaurant } = useMenuContext();
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
       <div

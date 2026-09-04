@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import type { CartItem, CartState } from "@/lib/types";
-import { menuItems } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { calculateCartTotal } from "@/lib/utils";
 
 const STORAGE_KEY = "chashni-cart";
@@ -53,6 +53,7 @@ export function useCartContext() {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { menuItems } = useMenuContext();
   const [state, setState] = useState<CartState>(() => getStoredCart());
 
   useEffect(() => {
@@ -103,7 +104,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const itemCount = useMemo(() => state.items.reduce((sum, item) => sum + item.quantity, 0), [state.items]);
   const { subtotal, discount, total } = useMemo(
     () => calculateCartTotal(state.items, menuItems),
-    [state.items]
+    [state.items, menuItems]
   );
 
   return (

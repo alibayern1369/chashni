@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { categories } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,7 @@ interface CategoryTabsProps {
 
 export function CategoryTabs({ activeCategory, onCategorySelect, className }: CategoryTabsProps) {
   const { locale } = useLocaleContext();
+  const { categories } = useMenuContext();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
 

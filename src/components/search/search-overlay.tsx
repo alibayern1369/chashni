@@ -5,21 +5,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, Clock, Trash2 } from "lucide-react";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { useSearch } from "@/lib/hooks";
-import { menuItems } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/menu/product-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import type { MenuItem } from "@/lib/types";
 
 interface SearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart?: (item: (typeof menuItems)[0]) => void;
-  onOpenDetail?: (item: (typeof menuItems)[0]) => void;
+  onAddToCart?: (item: MenuItem) => void;
+  onOpenDetail?: (item: MenuItem) => void;
   className?: string;
 }
 
 export function SearchOverlay({ isOpen, onClose, onAddToCart, onOpenDetail, className }: SearchOverlayProps) {
   const { locale } = useLocaleContext();
+  const { menuItems } = useMenuContext();
   const inputRef = useRef<HTMLInputElement>(null);
   const { query, setQuery, results, recentSearches, addRecentSearch, clearRecentSearches } =
     useSearch(menuItems);

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
-import { menuItems } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { cn, formatPrice } from "@/lib/utils";
 
 interface UpsellCardProps {
@@ -15,13 +15,14 @@ interface UpsellCardProps {
 
 export function UpsellCard({ excludeIds = [], onAdd, className }: UpsellCardProps) {
   const { locale } = useLocaleContext();
+  const { menuItems } = useMenuContext();
 
   const suggestions = useMemo(() => {
     const pool = menuItems.filter(
       (item) => !excludeIds.includes(item.id) && item.available
     );
     return pool.slice(0, 3);
-  }, [excludeIds]);
+  }, [excludeIds, menuItems]);
 
   if (suggestions.length === 0) return null;
 

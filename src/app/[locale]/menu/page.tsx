@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal } from "lucide-react";
-import { categories, menuItems } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { useFilters } from "@/lib/hooks";
@@ -33,6 +33,7 @@ export default function MenuPage() {
   const isRtl = locale === "fa";
   const table = searchParams.get("table") || undefined;
 
+  const { categories, menuItems } = useMenuContext();
   const { locale: ctxLocale } = useLocaleContext();
   const { addItem } = useCartContext();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();

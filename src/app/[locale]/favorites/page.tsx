@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
-import { menuItems } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { useFavorites } from "@/lib/hooks";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { ProductCard } from "@/components/menu/product-card";
@@ -16,6 +16,7 @@ export default function FavoritesPage() {
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
   const { favorites } = useFavorites();
+  const { menuItems } = useMenuContext();
 
   const favoriteItems = menuItems.filter((item) => favorites.includes(item.id));
 

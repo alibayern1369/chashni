@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ShoppingBag, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
-import { menuItems } from "@/lib/data";
+import { useMenuContext } from "@/lib/providers/data-provider";
 import { formatPrice, calculateItemPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { QuantityControl } from "@/components/ui/quantity-control";
@@ -19,6 +19,7 @@ export default function CartPage() {
   const isRtl = locale === "fa";
   const { items, removeItem, updateQuantity, table, orderType, setOrderType, subtotal, discount, total, itemCount } =
     useCartContext();
+  const { menuItems } = useMenuContext();
 
   const Arrow = isRtl ? ChevronLeft : ChevronRight;
 
