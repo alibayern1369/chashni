@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { requireSupabasePublicEnv } from "./env";
 
 /**
  * Service-role client — bypasses RLS.
@@ -7,8 +8,12 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
  * check. NEVER expose this key to the client (no NEXT_PUBLIC_ prefix).
  */
 export function createServiceClient() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const { url } = requireSupabasePublicEnv();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) {
+    throw new Error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY. Set it in Vercel → Settings → Environment Variables.",
+    );
+  }
+  return createSupabaseClient(url, serviceKey);
 }

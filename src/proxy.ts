@@ -15,39 +15,44 @@ export async function proxy(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
-        },
+  const tenantSlug = resolveTenant(request);
+  supabaseResponse.headers.set("x-tenant-slug", tenantSlug);
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Missing env in production must not 500 the whole site (static/demo still work).
+  if (!url || !anonKey) {
+    console.error(
+      "[chashni] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY — auth skipped",
+    );
+    return supabaseResponse;
+  }
+
+  const supabase = createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value),
+        );
+        supabaseResponse = NextResponse.next({
+          request,
+        });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options),
+        );
+        supabaseResponse.headers.set("x-tenant-slug", tenantSlug);
       },
     },
-  );
+  });
 
   // Refresh the session for Server Components.
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  // Tenant resolution
-  const tenantSlug = resolveTenant(request);
-
-  // Attach tenant + user info to response headers for downstream use
-  supabaseResponse.headers.set("x-tenant-slug", tenantSlug);
 
   if (user) {
     supabaseResponse.headers.set("x-user-id", user.id);
@@ -102,10 +107,10 @@ export const config = {
     /*
      * Match all request paths except:
      * - _next/static (static files)
-     * - _next/image (image optimization files)
+     * - _next/image (image optimization images)
      * - favicon.ico (favicon file)
      * - public files (svg, png, etc.)
-     * - demo routes (static demo pages, no auth needed)
+     * - demo / site routes (static, no auth needed)
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|demo|site).*)",
   ],
