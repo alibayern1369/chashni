@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Search, ShoppingCart, Globe } from "lucide-react";
+import { Search, ShoppingCart, Globe, User } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
+import { useAuth } from "@/lib/auth/auth-provider";
 import { useTable } from "@/lib/hooks";
 import { cn, toPersianDigits } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ interface AppHeaderProps {
 export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProps) {
   const { itemCount } = useCartContext();
   const { locale, setLocale } = useLocaleContext();
+  const { user } = useAuth();
   const { table } = useTable();
   const router = useRouter();
   const pathname = usePathname();
@@ -59,6 +61,13 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
               {locale === "fa" ? `میز ${toPersianDigits(table)}` : `Table ${table}`}
             </span>
           )}
+
+          <button
+            onClick={() => router.push(user ? `/${locale}/account` : `/${locale}/login`)}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+          >
+            <User size={18} />
+          </button>
 
           <button
             onClick={handleLocaleToggle}

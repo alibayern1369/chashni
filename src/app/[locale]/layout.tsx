@@ -6,6 +6,7 @@ import { DataProvider } from "@/lib/providers/data-provider";
 import { CartProvider } from "@/lib/providers/cart-provider";
 import { LocaleProvider } from "@/lib/providers/locale-provider";
 import { ToastProvider } from "@/lib/providers/toast-provider";
+import { AuthProvider } from "@/lib/auth/auth-provider";
 import { AppHeader } from "@/components/layout/app-header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { AppFooter } from "@/components/layout/app-footer";
@@ -42,6 +43,7 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
     : "home";
 
   return (
+    <AuthProvider>
     <DataProvider>
     <LocaleProvider initialLocale={locale}>
       <CartProvider>
@@ -91,5 +93,6 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
       </CartProvider>
     </LocaleProvider>
     </DataProvider>
+    </AuthProvider>
   );
 }

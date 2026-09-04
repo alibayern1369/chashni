@@ -23,26 +23,62 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cashier">("online");
   const [isPlacing, setIsPlacing] = useState(false);
+  const [placeError, setPlaceError] = useState<string | null>(null);
 
   const estimatedTime = getEstimatedTime(items, menuItems);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     setIsPlacing(true);
-    const orderId = generateOrderId();
-    createOrder({
-      id: orderId,
-      items,
-      table,
-      orderType,
-      total,
-      customerName: name || undefined,
-      customerPhone: phone || undefined,
-      notes: notes || undefined,
-    });
-    setTimeout(() => {
+    setPlaceError(null);
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items,
+          table,
+          orderType,
+          customerName: name || undefined,
+          customerPhone: phone || undefined,
+          notes: notes || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPlaceError(
+          (data?.error as string) ||
+            (isRtl ? "خطا در ثبت سفارش" : "Failed to place order"),
+        );
+        setIsPlacing(false);
+        return;
+      }
+
+      const orderId = data?.order?.id || generateOrderId();
       clearCart();
-      router.push(`/${locale}/order/success?id=${orderId}${table ? `&table=${table}` : ""}&time=${estimatedTime}`);
-    }, 1500);
+      router.push(
+        `/${locale}/order/success?id=${orderId}${table ? `&table=${table}` : ""}&time=${estimatedTime}`,
+      );
+    } catch {
+      // Graceful fallback: local order store (demo without API)
+      const orderId = generateOrderId();
+      createOrder({
+        id: orderId,
+        items,
+        table,
+        orderType,
+        total,
+        customerName: name || undefined,
+        customerPhone: phone || undefined,
+        notes: notes || undefined,
+      });
+      clearCart();
+      router.push(
+        `/${locale}/order/success?id=${orderId}${table ? `&table=${table}` : ""}&time=${estimatedTime}`,
+      );
+    }
   };
 
   return (
@@ -190,6 +226,13 @@ export default function CheckoutPage() {
             </div>
 
             {/* Place order */}
+            {placeError && (
+              <div className="flex items-start gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <span>{placeError}</span>
+              </div>
+            )}
+
             <Button
               variant="primary"
               fullWidth
