@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
+import { requireTenantAccess } from "@/lib/api/admin-auth";
 import { hasModule } from "@/lib/supabase/modules";
 import type { DBOrderStatus } from "@/lib/types";
 
@@ -13,9 +14,19 @@ const VALID_STATUSES: DBOrderStatus[] = [
   "cancelled",
 ];
 
+/** Allowed forward transitions (+ cancel from non-terminal) */
+const ALLOWED: Record<DBOrderStatus, DBOrderStatus[]> = {
+  received: ["confirmed", "cancelled"],
+  confirmed: ["preparing", "cancelled"],
+  preparing: ["ready", "cancelled"],
+  ready: ["served", "completed", "cancelled"],
+  served: ["completed"],
+  completed: [],
+  cancelled: [],
+};
+
 /**
- * POST /api/orders/status — Update order status.
- * Requires authentication + tenant membership (enforced by RLS + this check).
+ * POST /api/orders/status — Update order status with FSM validation.
  */
 export async function POST(req: NextRequest) {
   const { tenant, supabase } = await getTenantFromRequest();
@@ -23,11 +34,8 @@ export async function POST(req: NextRequest) {
   if (!tenant) return apiError("Tenant not found", 404);
   if (!hasModule(tenant, "orders")) return apiError("Orders module disabled", 403);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return apiError("Authentication required", 401);
+  const access = await requireTenantAccess(tenant, "kitchen");
+  if ("error" in access) return access.error;
 
   const body = await parseBody<{
     orderId: string;
@@ -36,6 +44,21 @@ export async function POST(req: NextRequest) {
 
   if (!body?.orderId || !VALID_STATUSES.includes(body.status)) {
     return apiError("Invalid order id or status", 400);
+  }
+
+  const { data: current, error: fetchError } = await supabase
+    .from("orders")
+    .select("id, status")
+    .eq("id", body.orderId)
+    .eq("tenant_id", tenant.id)
+    .single();
+
+  if (fetchError || !current) return apiError("Order not found", 404);
+
+  const from = current.status as DBOrderStatus;
+  const allowed = ALLOWED[from] ?? [];
+  if (!allowed.includes(body.status)) {
+    return apiError(`Invalid transition ${from} → ${body.status}`, 400);
   }
 
   const update: Partial<Record<string, unknown>> = {

@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("orders")
-    .select("*")
+    .select("*, table:tables(id, number, name)")
     .eq("tenant_id", tenant.id)
     .order("created_at", { ascending: false })
     .limit(Math.min(limit, 500));

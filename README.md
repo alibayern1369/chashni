@@ -377,6 +377,16 @@ Screenshots are captured against the **real running application** using Playwrig
 
 ---
 
+## Platform links
+
+Full link map (super admin, menu, restaurant admin, landing, demo):
+
+- **[docs/LINKS.md](docs/LINKS.md)**
+- Interactive: [/site/links](/site/links)
+- Product landing: [/site](/site)
+
+---
+
 ## License
 
 This project is a portfolio demonstration. All restaurant data is fictional.

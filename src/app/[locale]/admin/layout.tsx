@@ -2,10 +2,33 @@
 
 import { useParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Receipt, UtensilsCrossed, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Loader2,
+  Receipt,
+  UtensilsCrossed,
+  LogOut,
+  Shield,
+  ChefHat,
+  Grid3x3,
+  Settings as SettingsIcon,
+  LayoutTemplate,
+  TicketPercent,
+  Image as ImageIcon,
+  CalendarDays,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { cn } from "@/lib/utils";
+import { ADMIN_NAV_MODULES, type CatalogModuleId } from "@/lib/modules/catalog";
 import type { Locale } from "@/lib/types";
+
+type TabDef = {
+  path: string;
+  labelFa: string;
+  labelEn: string;
+  icon: React.ReactNode;
+  module?: CatalogModuleId;
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -15,7 +38,60 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isRtl = locale === "fa";
   const { user, loading, signOut } = useAuth();
 
-  if (loading) {
+  const [accessChecked, setAccessChecked] = useState(false);
+  const [allowed, setAllowed] = useState(false);
+  const [superAdmin, setSuperAdmin] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const [modules, setModules] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.replace(`/${locale}/login`);
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        const [accessRes, restaurantRes] = await Promise.all([
+          fetch("/api/admin/access"),
+          fetch("/api/restaurant"),
+        ]);
+        if (!mounted) return;
+
+        if (!accessRes.ok) {
+          setAllowed(false);
+          setAccessChecked(true);
+          router.replace(`/${locale}`);
+          return;
+        }
+
+        const access = await accessRes.json();
+        setAllowed(true);
+        setSuperAdmin(!!access.isSuperAdmin);
+        setRole(access.role ?? null);
+
+        if (restaurantRes.ok) {
+          const data = await restaurantRes.json();
+          setModules(data.tenant?.enabled_modules ?? []);
+        }
+      } catch {
+        if (mounted) {
+          setAllowed(false);
+          router.replace(`/${locale}`);
+        }
+      } finally {
+        if (mounted) setAccessChecked(true);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, loading, locale, router]);
+
+  if (loading || !accessChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 size={24} className="animate-spin text-amber-400" />
@@ -23,27 +99,55 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!user) {
-    router.replace(`/${locale}/login`);
-    return null;
-  }
+  if (!user || !allowed) return null;
 
-  const tabs = [
-    {
-      href: `/${locale}/admin`,
-      labelFa: "سفارش‌ها",
-      labelEn: "Orders",
-      icon: <Receipt size={16} />,
-      active: !pathname.includes("/admin/menu"),
-    },
-    {
-      href: `/${locale}/admin/menu`,
-      labelFa: "منو",
-      labelEn: "Menu",
-      icon: <UtensilsCrossed size={16} />,
-      active: pathname.includes("/admin/menu"),
-    },
+  const isKitchenOnly = role === "kitchen";
+
+  const tabDefs: TabDef[] = [
+    { path: "/admin/menu", labelFa: "منو", labelEn: "Menu", icon: <UtensilsCrossed size={16} />, module: "menu" },
+    { path: "/admin", labelFa: "سفارش‌ها", labelEn: "Orders", icon: <Receipt size={16} />, module: "orders" },
+    { path: "/admin/kitchen", labelFa: "آشپزخانه", labelEn: "Kitchen", icon: <ChefHat size={16} />, module: "orders" },
+    { path: "/admin/tables", labelFa: "میزها", labelEn: "Tables", icon: <Grid3x3 size={16} />, module: "tables" },
+    { path: "/admin/pages", labelFa: "لندینگ", labelEn: "Pages", icon: <LayoutTemplate size={16} />, module: "cms" },
+    { path: "/admin/promotions", labelFa: "تخفیف‌ها", labelEn: "Promos", icon: <TicketPercent size={16} />, module: "orders" },
+    { path: "/admin/media", labelFa: "تصاویر", labelEn: "Media", icon: <ImageIcon size={16} />, module: "menu" },
+    { path: "/admin/reservations", labelFa: "رزرو", labelEn: "Reservations", icon: <CalendarDays size={16} />, module: "reservations" },
+    { path: "/admin/settings", labelFa: "تنظیمات", labelEn: "Settings", icon: <SettingsIcon size={16} /> },
   ];
+
+  const moduleEnabled = (mod?: CatalogModuleId) => {
+    if (!mod) return true;
+    if (modules.length === 0) return true;
+    return modules.includes(mod);
+  };
+
+  const tabs = tabDefs
+    .filter((t) => {
+      if (!moduleEnabled(t.module ?? ADMIN_NAV_MODULES[t.path])) return false;
+      if (isKitchenOnly) {
+        return t.path === "/admin" || t.path === "/admin/kitchen";
+      }
+      return true;
+    })
+    .map((t) => ({
+      ...t,
+      href: `/${locale}${t.path}`,
+      active:
+        t.path === "/admin"
+          ? pathname === `/${locale}/admin`
+          : pathname.includes(t.path),
+    }));
+
+  if (superAdmin) {
+    tabs.push({
+      path: "/admin/super",
+      href: `/${locale}/admin/super`,
+      labelFa: "پنل کل",
+      labelEn: "Super",
+      icon: <Shield size={16} />,
+      active: pathname.includes("/admin/super"),
+    });
+  }
 
   const handleSignOut = async () => {
     await signOut();

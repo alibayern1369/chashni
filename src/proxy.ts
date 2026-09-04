@@ -107,6 +107,6 @@ export const config = {
      * - public files (svg, png, etc.)
      * - demo routes (static demo pages, no auth needed)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|demo).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|demo|site).*)",
   ],
 };

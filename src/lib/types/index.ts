@@ -109,8 +109,8 @@ export type DBOrderStatus =
 // UI-facing order status (kept backward-compatible with existing components)
 export type OrderStatus = "received" | "preparing" | "ready" | "completed";
 
-// UI-facing order types (kept backward-compatible with existing components)
-export type OrderType = "dine-in" | "takeaway";
+// UI-facing order types
+export type OrderType = "dine-in" | "takeaway" | "delivery";
 
 // Full DB order type
 export type DBOrderType = "dine-in" | "takeaway" | "delivery";
@@ -259,6 +259,12 @@ export interface DBOrder {
   customer_phone: string | null;
   notes: string | null;
   estimated_minutes: number | null;
+  payment_method: "online" | "cashier" | null;
+  payment_status: "unpaid" | "pending" | "paid" | "failed" | "refunded";
+  payment_ref: string | null;
+  promo_code: string | null;
+  delivery_address: string | null;
+  loyalty_points_earned: number;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -524,7 +530,18 @@ export interface BurgerCategory {
 
 // ─── Helper Types ────────────────────────────────────────────────────────────
 
-export type ModuleName = "menu" | "orders" | "tables" | "delivery" | "payment" | "loyalty" | "cms" | "reservations";
+export type ModuleName =
+  | "menu"
+  | "orders"
+  | "tables"
+  | "delivery"
+  | "payment"
+  | "loyalty"
+  | "cms"
+  | "reservations"
+  | "builder"
+  | "favorites"
+  | "auth";
 
 export interface TenantContext {
   tenant: Tenant;

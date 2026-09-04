@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, User as UserIcon, Loader2, Settings } from "lucide-react";
+import { LogOut, User as UserIcon, Loader2, Settings, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-provider";
 import type { Locale } from "@/lib/types";
 
@@ -12,6 +13,17 @@ export default function AccountPage() {
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
   const { user, loading, signOut } = useAuth();
+  const [loyalty, setLoyalty] = useState<{ enabled: boolean; points: number } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/loyalty")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setLoyalty(data);
+      })
+      .catch(() => {});
+  }, [user]);
 
   if (loading) {
     return (
@@ -48,6 +60,13 @@ export default function AccountPage() {
             {user.email}
           </p>
 
+          {loyalty?.enabled && (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/25 px-4 py-2 text-sm text-amber-400">
+              <Sparkles size={14} />
+              {isRtl ? `${loyalty.points} امتیاز` : `${loyalty.points} points`}
+            </div>
+          )}
+
           <button
             onClick={handleSignOut}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-4 py-3 text-sm font-medium text-[#ccc] hover:border-red-500/40 hover:text-red-400 transition-colors"
@@ -63,14 +82,14 @@ export default function AccountPage() {
           </h2>
           <p className="text-sm text-[#888]">
             {isRtl
-              ? "تاریخچه سفارش‌ها به‌زودی اضافه می‌شود."
-              : "Order history coming soon."}
+              ? "تاریخچه و وضعیت سفارش‌هایت را اینجا ببین."
+              : "View your order history and statuses here."}
           </p>
           <Link
-            href={`/${locale}/menu`}
-            className="mt-6 inline-block rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-black hover:bg-amber-400"
+            href={`/${locale}/my-orders`}
+            className="mt-6 inline-block w-full rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-black text-center hover:bg-amber-400"
           >
-            {isRtl ? "مشاهده منو" : "View menu"}
+            {isRtl ? "مشاهده سفارش‌ها" : "View my orders"}
           </Link>
           <Link
             href={`/${locale}/admin`}

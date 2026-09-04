@@ -4,9 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, RefreshCw, Plus, Pencil, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MODULE_CATALOG } from "@/lib/modules/catalog";
 import type { Locale, Tenant } from "@/lib/types";
-
-const ALL_MODULES = ["menu", "orders", "auth", "qr", "builder", "favorites", "landing", "delivery"];
 
 export default function SuperTenantsPage() {
   const params = useParams();
@@ -217,12 +216,12 @@ export default function SuperTenantsPage() {
                   {isRtl ? "ماژول‌ها" : "Modules"}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {ALL_MODULES.map((mod) => {
-                    const on = tenant.enabled_modules?.includes(mod) ?? false;
+                  {MODULE_CATALOG.map((mod) => {
+                    const on = tenant.enabled_modules?.includes(mod.id) ?? false;
                     return (
                       <button
-                        key={mod}
-                        onClick={() => toggleModule(tenant, mod)}
+                        key={mod.id}
+                        onClick={() => toggleModule(tenant, mod.id)}
                         disabled={busyId === tenant.id}
                         className={cn(
                           "rounded-full px-3 py-1.5 text-[11px] font-semibold border transition-colors",
@@ -231,7 +230,7 @@ export default function SuperTenantsPage() {
                             : "bg-transparent border-[#2a2a2a] text-[#666] hover:border-[#444]",
                         )}
                       >
-                        {mod}
+                        {isRtl ? mod.labelFa : mod.labelEn}
                       </button>
                     );
                   })}

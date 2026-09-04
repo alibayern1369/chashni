@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Utensils, Sparkles, Clock, MapPin, Phone } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { RestaurantStatus } from "@/components/restaurant/restaurant-status";
 import { useMenuContext } from "@/lib/providers/data-provider";
-import type { Locale } from "@/lib/types";
+import { CmsBlocks } from "@/components/cms/cms-blocks";
+import type { Locale, PageBlock } from "@/lib/types";
 
 export default function HomePage() {
   const params = useParams();
@@ -16,6 +17,8 @@ export default function HomePage() {
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
   const { categories, menuItems, restaurant } = useMenuContext();
+  const [cmsBlocks, setCmsBlocks] = useState<PageBlock[] | null>(null);
+  const [cmsChecked, setCmsChecked] = useState(false);
 
   const table = searchParams.get("table");
 
@@ -25,7 +28,42 @@ export default function HomePage() {
     }
   }, [table, locale, router]);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/pages?slug=home")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.enabled && data.page && (data.blocks?.length ?? 0) > 0) {
+          setCmsBlocks(data.blocks);
+        } else {
+          setCmsBlocks(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCmsBlocks(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCmsChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (table) return null;
+
+  if (!cmsChecked) {
+    return <div className="min-h-screen" />;
+  }
+
+  if (cmsBlocks) {
+    return (
+      <div className="min-h-screen">
+        <CmsBlocks blocks={cmsBlocks} locale={locale} />
+      </div>
+    );
+  }
 
   const bestseller = menuItems.find((i) => i.isBestseller && i.isChefPick);
   const popularCategories = categories.slice(1, 5);

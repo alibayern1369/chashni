@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import type { OrderStatus } from "@/lib/types";
 
 interface OrderTimelineProps {
+  /** Controlled status from DB (preferred) */
+  status?: OrderStatus;
   initialStatus?: OrderStatus;
   autoProgress?: boolean;
   className?: string;
@@ -27,14 +29,32 @@ const statusIcons: Record<OrderStatus, typeof Check> = {
   completed: CheckCircle2,
 };
 
-export function OrderTimeline({ initialStatus = "received", autoProgress = false, className }: OrderTimelineProps) {
+function mapDbStatus(raw: string): OrderStatus {
+  if (raw === "confirmed" || raw === "preparing") return "preparing";
+  if (raw === "ready" || raw === "served") return "ready";
+  if (raw === "completed") return "completed";
+  if (raw === "cancelled") return "completed";
+  return "received";
+}
+
+export function OrderTimeline({
+  status,
+  initialStatus = "received",
+  autoProgress = false,
+  className,
+}: OrderTimelineProps) {
   const { locale } = useLocaleContext();
-  const [currentStatus, setCurrentStatus] = useState(initialStatus);
+  const controlled = status ? mapDbStatus(status) : null;
+  const [currentStatus, setCurrentStatus] = useState(controlled ?? initialStatus);
+
+  useEffect(() => {
+    if (controlled) setCurrentStatus(controlled);
+  }, [controlled]);
 
   const currentIndex = statuses.findIndex((s) => s.key === currentStatus);
 
   useEffect(() => {
-    if (!autoProgress) return;
+    if (!autoProgress || controlled) return;
     if (currentStatus === "completed") return;
 
     const timer = setTimeout(() => {
@@ -45,17 +65,17 @@ export function OrderTimeline({ initialStatus = "received", autoProgress = false
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [currentStatus, autoProgress]);
+  }, [currentStatus, autoProgress, controlled]);
 
   return (
     <div className={cn("space-y-0", className)}>
-      {statuses.map((status, index) => {
-        const Icon = statusIcons[status.key];
+      {statuses.map((s, index) => {
+        const Icon = statusIcons[s.key];
         const isCompleted = index < currentIndex;
         const isCurrent = index === currentIndex;
 
         return (
-          <div key={status.key} className="flex gap-4">
+          <div key={s.key} className="flex gap-4">
             <div className="flex flex-col items-center">
               <motion.div
                 animate={{
@@ -64,25 +84,16 @@ export function OrderTimeline({ initialStatus = "received", autoProgress = false
                 }}
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-full border-2 shrink-0",
-                  isCompleted || isCurrent
-                    ? "border-amber-400"
-                    : "border-[#333]"
+                  isCompleted || isCurrent ? "border-amber-400" : "border-[#333]",
                 )}
               >
                 <Icon
                   size={18}
-                  className={cn(
-                    isCompleted || isCurrent ? "text-black" : "text-[#555]"
-                  )}
+                  className={cn(isCompleted || isCurrent ? "text-black" : "text-[#555]")}
                 />
               </motion.div>
               {index < statuses.length - 1 && (
-                <div
-                  className={cn(
-                    "w-0.5 h-8",
-                    isCompleted ? "bg-amber-400" : "bg-[#252525]"
-                  )}
-                />
+                <div className={cn("w-0.5 h-8", isCompleted ? "bg-amber-400" : "bg-[#252525]")} />
               )}
             </div>
 
@@ -90,10 +101,10 @@ export function OrderTimeline({ initialStatus = "received", autoProgress = false
               <p
                 className={cn(
                   "text-sm font-medium",
-                  isCurrent ? "text-amber-400" : isCompleted ? "text-[#ccc]" : "text-[#555]"
+                  isCurrent ? "text-amber-400" : isCompleted ? "text-[#ccc]" : "text-[#555]",
                 )}
               >
-                {locale === "fa" ? status.labelFa : status.labelEn}
+                {locale === "fa" ? s.labelFa : s.labelEn}
               </p>
               {isCurrent && (
                 <motion.p
