@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, LayoutDashboard, Store, Users, Shield, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { cn } from "@/lib/utils";
+import { displayLogin } from "@/lib/auth/identity";
 import type { Locale } from "@/lib/types";
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +13,6 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const router = useRouter();
   const pathname = usePathname();
   const locale = (params.locale as Locale) || "fa";
-  const isRtl = locale === "fa";
   const { user, loading, signOut } = useAuth();
 
   if (loading) {
@@ -24,29 +24,26 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   }
 
   if (!user) {
-    router.replace(`/${locale}/login`);
+    router.replace(`/fa/login`);
     return null;
   }
 
   const tabs = [
     {
-      href: `/${locale}/admin/super`,
+      href: `/fa/admin/super`,
       labelFa: "داشبورد",
-      labelEn: "Dashboard",
       icon: <LayoutDashboard size={16} />,
-      active: pathname === `/${locale}/admin/super`,
+      active: pathname === `/${locale}/admin/super` || pathname === `/fa/admin/super`,
     },
     {
-      href: `/${locale}/admin/super/tenants`,
-      labelFa: "تننت‌ها",
-      labelEn: "Tenants",
+      href: `/fa/admin/super/tenants`,
+      labelFa: "رستوران‌ها",
       icon: <Store size={16} />,
       active: pathname.includes("/admin/super/tenants"),
     },
     {
-      href: `/${locale}/admin/super/users`,
+      href: `/fa/admin/super/users`,
       labelFa: "کاربران",
-      labelEn: "Users",
       icon: <Users size={16} />,
       active: pathname.includes("/admin/super/users"),
     },
@@ -54,26 +51,33 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   const handleSignOut = async () => {
     await signOut();
-    router.push(`/${locale}`);
+    router.push(`/fa`);
   };
 
+  const loginLabel = displayLogin(
+    user.email,
+    (user.user_metadata as { username?: string } | undefined)?.username,
+  );
+
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-16" dir="rtl">
       <div className="mx-auto max-w-6xl px-4 py-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-black text-[#faf5e4]">
               <Shield size={22} className="text-amber-400" />
-              {isRtl ? "پنل مدیریت کل (سوپر ادمین)" : "Super Admin"}
+              پنل مدیریت کل (سوپر ادمین)
             </h1>
-            <p className="text-xs text-[#888]" dir="ltr">{user.email}</p>
+            <p className="text-xs text-[#888]" dir="ltr">
+              {loginLabel}
+            </p>
           </div>
           <button
             onClick={handleSignOut}
-            className="self-start flex items-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-4 py-2.5 text-xs font-medium text-[#ccc] hover:border-red-500/40 hover:text-red-400 transition-colors"
+            className="flex items-center gap-2 self-start rounded-xl border border-[#333] bg-[#1e1e1e] px-4 py-2.5 text-xs font-medium text-[#ccc] hover:border-red-500/40 hover:text-red-400"
           >
             <LogOut size={14} />
-            {isRtl ? "خروج" : "Sign out"}
+            خروج
           </button>
         </div>
 
@@ -83,14 +87,14 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px shrink-0",
+                "flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors -mb-px",
                 tab.active
                   ? "border-amber-500 text-amber-400"
                   : "border-transparent text-[#888] hover:text-[#ccc]",
               )}
             >
               {tab.icon}
-              {isRtl ? tab.labelFa : tab.labelEn}
+              {tab.labelFa}
             </Link>
           ))}
         </div>

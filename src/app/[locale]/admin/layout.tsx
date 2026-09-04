@@ -35,8 +35,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const locale = (params.locale as Locale) || "fa";
-  const isRtl = locale === "fa";
   const { user, loading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (locale !== "fa") {
+      const rest = pathname.replace(`/${locale}`, "/fa") || "/fa/admin";
+      router.replace(rest);
+    }
+  }, [locale, pathname, router]);
 
   const [accessChecked, setAccessChecked] = useState(false);
   const [allowed, setAllowed] = useState(false);
@@ -155,12 +161,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-16" dir="rtl">
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-black text-[#faf5e4]">
-              {isRtl ? "پنل مدیریت رستوران" : "Restaurant Admin"}
+              پنل مدیریت رستوران
             </h1>
             <p className="text-xs text-[#888]" dir="ltr">{user.email}</p>
           </div>
@@ -169,7 +175,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="self-start flex items-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-4 py-2.5 text-xs font-medium text-[#ccc] hover:border-red-500/40 hover:text-red-400 transition-colors"
           >
             <LogOut size={14} />
-            {isRtl ? "خروج" : "Sign out"}
+            خروج
           </button>
         </div>
 
@@ -186,7 +192,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
             >
               {tab.icon}
-              {isRtl ? tab.labelFa : tab.labelEn}
+              {tab.labelFa}
             </Link>
           ))}
         </div>

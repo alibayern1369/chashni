@@ -14,7 +14,11 @@ Base URL examples use local `http://localhost:3000`. Replace with your deployed 
 | Tenants (create restaurants + toggle modules) | `/fa/admin/super/tenants` |
 | Users & roles | `/fa/admin/super/users` |
 
-Requires a profile with `role = super_admin`. Login first at `/fa/login`.
+Requires a profile with `role = super_admin`. Login with **username + password** at `/fa/login`.
+
+First-time setup: if no super admin exists, the login page offers **Create admin / admin**.
+
+Super admin can create users and reset passwords at `/fa/admin/super/users`.
 
 **Modules toggled per tenant:** `menu`, `orders`, `tables`, `builder`, `favorites`, `cms`, `payment`, `delivery`, `loyalty`, `reservations`, `auth`.
 

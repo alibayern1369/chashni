@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-provider";
+import { isValidUsername } from "@/lib/auth/identity";
 import type { Locale } from "@/lib/types";
 
 export default function SignupPage() {
@@ -12,62 +13,51 @@ export default function SignupPage() {
   const router = useRouter();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
-  const { signUp, error } = useAuth();
+  const { signUp, signIn, error } = useAuth();
 
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    setFormError(null);
-    const { error } = await signUp(email, password, fullName);
-    setSubmitting(false);
-    if (error) {
-      setFormError(isRtl ? translateError(error) : error);
+    if (!isValidUsername(username)) {
+      setFormError(
+        isRtl
+          ? "نام کاربری باید ۳ تا ۳۲ کاراکتر انگلیسی (حروف، عدد، . _ -) باشد"
+          : "Username must be 3–32 chars: a-z, 0-9, . _ -",
+      );
       return;
     }
-    setSent(true);
+    setSubmitting(true);
+    setFormError(null);
+    const { error: upErr } = await signUp(username, password, fullName);
+    if (upErr) {
+      setSubmitting(false);
+      setFormError(isRtl ? translateError(upErr) : upErr);
+      return;
+    }
+    // Username accounts are auto-confirmed via local domain; try sign-in
+    const { error: inErr } = await signIn(username, password);
+    setSubmitting(false);
+    if (inErr) {
+      router.push(`/${locale}/login`);
+      return;
+    }
+    router.push(`/${locale}/account`);
   };
-
-  if (sent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4 py-20">
-        <div className="w-full max-w-md text-center rounded-3xl bg-[#141414] border border-[#1e1e1e] p-8">
-          <span className="text-5xl block mb-4">✅</span>
-          <h1 className="text-xl font-black text-[#faf5e4] mb-2">
-            {isRtl ? "ثبت‌نام تقریباً تمام شد" : "Almost done"}
-          </h1>
-          <p className="text-sm text-[#888] mb-6">
-            {isRtl
-              ? "لینک تأیید به ایمیلت ارسال شد. لطفاً ایمیل را چک کن."
-              : "A confirmation link has been sent to your email. Please check your inbox."}
-          </p>
-          <Link
-            href={`/${locale}/login`}
-            className="inline-block rounded-xl bg-amber-500 px-6 py-3 text-sm font-bold text-black hover:bg-amber-400"
-          >
-            {isRtl ? "برو به ورود" : "Go to login"}
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-20">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <span className="text-4xl block mb-3">✨</span>
           <h1 className="text-2xl font-black text-[#faf5e4] mb-1">
             {isRtl ? "ساخت حساب جدید" : "Create account"}
           </h1>
           <p className="text-sm text-[#888]">
-            {isRtl ? "عضو چاشنی شو" : "Join CHASHNI"}
+            {isRtl ? "با نام کاربری و رمز عبور عضو شو" : "Join with username and password"}
           </p>
         </div>
 
@@ -75,9 +65,9 @@ export default function SignupPage() {
           onSubmit={handleSubmit}
           className="space-y-4 rounded-3xl bg-[#141414] border border-[#1e1e1e] p-6"
         >
-          {formError && (
+          {(formError || error) && (
             <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
-              {formError}
+              {formError ?? error}
             </div>
           )}
 
@@ -96,14 +86,15 @@ export default function SignupPage() {
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-[#ccc]">
-              {isRtl ? "ایمیل" : "Email"}
+              {isRtl ? "نام کاربری" : "Username"}
             </label>
             <input
-              type="email"
+              type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="username"
               dir="ltr"
               className="w-full rounded-xl bg-[#0a0a0a] border border-[#222] px-4 py-3 text-sm text-[#faf5e4] placeholder-[#555] focus:outline-none focus:border-amber-500/40"
             />
@@ -116,7 +107,8 @@ export default function SignupPage() {
             <input
               type="password"
               required
-              minLength={6}
+              minLength={4}
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -148,7 +140,7 @@ export default function SignupPage() {
 
 function translateError(err: string): string {
   const e = err.toLowerCase();
-  if (e.includes("already registered")) return "این ایمیل قبلاً ثبت شده است";
-  if (e.includes("password should be")) return "رمز عبور باید حداقل ۶ کاراکتر باشد";
+  if (e.includes("already registered")) return "این نام کاربری قبلاً ثبت شده است";
+  if (e.includes("password")) return "رمز عبور نامعتبر است";
   return err;
 }
