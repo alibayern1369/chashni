@@ -382,7 +382,7 @@ Screenshots are captured against the **real running application** using Playwrig
 - **[docs/LINKS.md](docs/LINKS.md)**
 - `/site` — لندینگ · `/site/links` — نقشه لینک‌ها · `/site/admin` — ادمین لندینگ
 - `/super` — سوپر ادمین · `/super/login`
-- `/r/chashni` — رستوران · `/r/chashni/menu` · `/r/chashni/admin`
+- `/r/namakdan` — رستوران نمکدان · `/r/namakdan/menu` · `/r/namakdan/admin`
 - `/demo` — دمو
 
 ---

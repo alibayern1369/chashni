@@ -1,22 +1,25 @@
 /**
  * Canonical public URL helpers — keep surfaces separated.
  *
- * /site/*     platform landing
- * /demo/*     portfolio demo
- * /super/*    platform super-admin
- * /r/{slug}/* restaurant (customer + admin)
+ * /site/*          CHASHNI platform landing
+ * /demo/*          portfolio demo
+ * /super/*         CHASHNI platform super-admin
+ * /r/{slug}/*      restaurant tenant (e.g. Namakdan = /r/namakdan)
+ *
+ * CHASHNI = multi-tenant platform. Namakdan = one restaurant on it.
  */
 
 import type { Locale } from "@/lib/types";
 
+/** Default restaurant tenant slug (Namakdan) — not the platform name. */
 export const DEFAULT_TENANT_SLUG =
-  process.env.NEXT_PUBLIC_DEFAULT_TENANT || "chashni";
+  process.env.NEXT_PUBLIC_DEFAULT_TENANT || "namakdan";
 
 export function restaurantBase(slug: string = DEFAULT_TENANT_SLUG): string {
   return `/r/${slug}`;
 }
 
-/** e.g. restaurantPath("/menu", "chashni") → /r/chashni/menu */
+/** e.g. restaurantPath("/menu", "namakdan") → /r/namakdan/menu */
 export function restaurantPath(
   path: string = "",
   slug: string = DEFAULT_TENANT_SLUG,
@@ -44,7 +47,7 @@ export function tenantSlugFromPathname(pathname: string): string | null {
 
 /**
  * Strip tenant + locale prefixes so we can rebuild locale URLs safely.
- * /r/chashni/menu → /menu
+ * /r/namakdan/menu → /menu
  * /en/menu → /menu
  * /fa/build-burger → /build-burger
  * /menu → /menu

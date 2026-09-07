@@ -12,7 +12,7 @@ interface NamakdanLogoProps {
 }
 
 export function NamakdanLogo({
-  href = "/r/chashni",
+  href = "/r/namakdan",
   showWordmark = true,
   locale = "fa",
   className,

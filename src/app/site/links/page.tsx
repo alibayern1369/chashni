@@ -63,7 +63,7 @@ export default function SiteLinksPage() {
         </Link>
         <h1 className="mt-4 text-3xl font-black">نقشه لینک‌ها — جدا و واضح</h1>
         <p className="mt-2 text-sm text-[#888]" dir="ltr">
-          /site · /super · /r/chashni · /demo
+          /site · /super · /r/namakdan · /demo
         </p>
 
         <div className="mt-10 space-y-8">

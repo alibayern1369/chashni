@@ -87,7 +87,7 @@ export async function checkAdminAccessApi(): Promise<Response> {
   const slug =
     headerStore.get("x-tenant-slug") ||
     process.env.NEXT_PUBLIC_DEFAULT_TENANT ||
-    "chashni";
+    "namakdan";
 
   const { data: tenant } = await supabase
     .from("tenants")

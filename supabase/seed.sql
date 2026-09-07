@@ -11,6 +11,7 @@
 
 UPDATE tenants
 SET
+  slug = 'namakdan',
   name_fa = E'\u0646\u0645\u06A9\u062F\u0627\u0646',
   name_en = 'Namakdan',
   slogan_fa = E'\u0637\u0639\u0645\u06CC \u06A9\u0647 \u0641\u0631\u0627\u0645\u0648\u0634\u0634 \u0646\u0645\u06CC\u200C\u06A9\u0646\u06CC',

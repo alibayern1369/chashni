@@ -68,7 +68,7 @@ export async function POST() {
     const { data: tenant } = await svc
       .from("tenants")
       .select("id")
-      .eq("slug", process.env.NEXT_PUBLIC_DEFAULT_TENANT || "chashni")
+      .eq("slug", process.env.NEXT_PUBLIC_DEFAULT_TENANT || "namakdan")
       .maybeSingle();
 
     if (tenant) {

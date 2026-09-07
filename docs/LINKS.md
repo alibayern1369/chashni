@@ -1,13 +1,15 @@
-# نمکدان / CHASHNI Platform — نقشه لینک‌ها
+# CHASHNI Platform / رستوران نمکدان — نقشه لینک‌ها
 
 چهار سطح جدا:
 
-| سطح | پیشوند |
-|------|--------|
-| لندینگ پلتفرم | `/site` |
-| سوپر ادمین | `/super` |
-| رستوران نمکدان | `/r/chashni` |
-| دمو | `/demo` |
+| سطح | پیشوند | معنی |
+|------|--------|------|
+| لندینگ پلتفرم | `/site` | CHASHNI (محصول) |
+| سوپر ادمین | `/super` | مدیریت چند رستوران روی پلتفرم |
+| رستوران نمکدان | `/r/namakdan` | یکی از tenantها (نه خود پلتفرم) |
+| دمو | `/demo` | نمونه پورتفولیو |
+
+> **چاشنی** = پلتفرم چندرستورانه · **نمکدان** = رستوران نمونه با slug=`namakdan`
 
 ---
 
@@ -28,14 +30,14 @@
 
 | نقش | آدرس |
 |-----|------|
-| هوم / لندینگ | `/r/chashni` |
-| منو | `/r/chashni/menu` |
-| منو + میز | `/r/chashni/menu?table=07` |
-| ساخت برگر (فقط از لندینگ) | `/r/chashni/build-burger` |
-| سبد / چک‌اوت | `/r/chashni/cart` · `/r/chashni/checkout` |
-| ورود | `/r/chashni/login` |
+| هوم / لندینگ | `/r/namakdan` |
+| منو | `/r/namakdan/menu` |
+| منو + میز | `/r/namakdan/menu?table=07` |
+| ساخت برگر (فقط از لندینگ) | `/r/namakdan/build-burger` |
+| سبد / چک‌اوت | `/r/namakdan/cart` · `/r/namakdan/checkout` |
+| ورود | `/r/namakdan/login` |
 
-آدرس‌های قدیمی `/fa/...` به `/r/chashni/...` ریدایرکت می‌شوند.
+آدرس‌های قدیمی `/fa/...` و `/r/chashni/...` به `/r/namakdan/...` ریدایرکت می‌شوند.
 
 ---
 
@@ -43,12 +45,15 @@
 
 | نقش | آدرس |
 |-----|------|
-| سفارش‌ها | `/r/chashni/admin` |
-| منو | `/r/chashni/admin/menu` |
-| آشپزخانه | `/r/chashni/admin/kitchen` |
-| میز و QR | `/r/chashni/admin/tables` |
-| لندینگ CMS رستوران | `/r/chashni/admin/pages` |
-| تنظیمات | `/r/chashni/admin/settings` |
+| سفارش‌ها | `/r/namakdan/admin` |
+| منو | `/r/namakdan/admin/menu` |
+| آشپزخانه | `/r/namakdan/admin/kitchen` |
+| میز و QR | `/r/namakdan/admin/tables` |
+| لندینگ CMS رستوران | `/r/namakdan/admin/pages` |
+| تخفیف‌ها | `/r/namakdan/admin/promotions` |
+| تصاویر | `/r/namakdan/admin/media` |
+| رزرو | `/r/namakdan/admin/reservations` |
+| تنظیمات | `/r/namakdan/admin/settings` |
 
 ---
 
@@ -77,7 +82,7 @@
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_DEFAULT_TENANT=chashni
+NEXT_PUBLIC_DEFAULT_TENANT=namakdan
 NEXT_PUBLIC_BASE_URL=https://chashni-seven.vercel.app
 ```
 
@@ -88,3 +93,6 @@ NEXT_PUBLIC_BASE_URL=https://chashni-seven.vercel.app
 3. `003_fix_encoding.sql`
 4. `004_platform_complete.sql`
 5. `005_username_login.sql`
+6. `006_orders_insert_policy.sql`
+7. `007_admin_panel_hardening.sql`
+8. `008_rename_tenant_slug_namakdan.sql`

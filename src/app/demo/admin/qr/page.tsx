@@ -79,7 +79,7 @@ export default function QrAdminPage() {
 
     const cards = tables
       .map((t) => {
-        const url = `${origin}/r/chashni/menu?table=${t.number}`;
+        const url = `${origin}/r/namakdan/menu?table=${t.number}`;
         return `
           <div style="display:inline-block;text-align:center;padding:32px;border:1px solid #ddd;border-radius:16px;margin:12px;page-break-inside:avoid;">
             <p style="font-size:14px;color:#666;margin:0 0 4px;">Table</p>
@@ -88,7 +88,7 @@ export default function QrAdminPage() {
               url
             )}" width="200" height="200" style="margin:0 0 12px;" />
             <p style="font-size:11px;color:#999;font-family:monospace;word-break:break-all;">${url}</p>
-            <p style="font-size:11px;color:#f59e0b;font-weight:bold;margin-top:8px;">CHASHNI — چاشنی</p>
+            <p style="font-size:11px;color:#f59e0b;font-weight:bold;margin-top:8px;">نمکدان — Namakdan</p>
           </div>`;
       })
       .join("");
@@ -134,7 +134,7 @@ export default function QrAdminPage() {
         className="grid grid-cols-2 gap-4 md:grid-cols-4"
       >
         {tables.map((t) => {
-          const url = `${origin}/r/chashni/menu?table=${t.number}`;
+          const url = `${origin}/r/namakdan/menu?table=${t.number}`;
           return (
             <div
               key={t.number}

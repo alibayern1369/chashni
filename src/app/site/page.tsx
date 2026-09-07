@@ -72,7 +72,7 @@ export default function PlatformLandingPage() {
           {[
             { t: "/site", d: "لندینگ محصول و نقشه لینک‌ها" },
             { t: "/super", d: "سوپر ادمین پلتفرم" },
-            { t: "/r/chashni", d: "منو و ادمین رستوران" },
+            { t: "/r/namakdan", d: "رستوران نمکدان — منو و ادمین" },
             { t: "/demo", d: "دمو پورتفولیو بدون auth" },
           ].map((card) => (
             <div

@@ -31,7 +31,7 @@ export default function SiteAdminPage() {
               className="text-amber-400 hover:underline"
               dir="ltr"
             >
-              /r/chashni/admin/pages
+              {restaurantPath("/admin/pages")}
             </Link>
           </li>
         </ul>

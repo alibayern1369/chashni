@@ -29,6 +29,6 @@ begin
   insert into tenant_members (id, tenant_id, user_id, role, is_active)
   select gen_random_uuid(), t.id, _uid, 'owner', true
   from tenants t
-  where t.slug = 'chashni'
+  where t.slug = 'namakdan'
   on conflict do nothing;
 end $$;

@@ -17,7 +17,7 @@ export async function getTenantFromRequest(): Promise<{
   const supabase = await createClient();
   const headers = await import("next/headers");
   const headerStore = await headers.headers();
-  const slug = headerStore.get("x-tenant-slug") || process.env.NEXT_PUBLIC_DEFAULT_TENANT || "chashni";
+  const slug = headerStore.get("x-tenant-slug") || process.env.NEXT_PUBLIC_DEFAULT_TENANT || "namakdan";
 
   const { data: tenant } = await supabase
     .from("tenants")

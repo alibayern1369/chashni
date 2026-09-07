@@ -1,14 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const DEFAULT_TENANT = process.env.NEXT_PUBLIC_DEFAULT_TENANT || "chashni";
+const DEFAULT_TENANT = process.env.NEXT_PUBLIC_DEFAULT_TENANT || "namakdan";
 
 /**
  * Public surfaces:
- *   /site/*     platform landing
+ *   /site/*     CHASHNI platform landing
  *   /demo/*     portfolio demo
- *   /super/*    super-admin (physical)
- *   /r/{slug}/* restaurant → rewrite to /fa/*
+ *   /super/*    CHASHNI super-admin
+ *   /r/{slug}/* restaurant tenant (Namakdan = /r/namakdan) → rewrite to /fa/*
  */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -25,6 +25,14 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/en/admin/super")) {
     const rest = pathname.slice("/en/admin/super".length);
     return NextResponse.redirect(new URL(`/super${rest}${search}`, request.url));
+  }
+
+  // Legacy mistaken restaurant slug (platform name) → Namakdan
+  if (pathname === "/r/chashni" || pathname.startsWith("/r/chashni/")) {
+    const rest = pathname.slice("/r/chashni".length);
+    return NextResponse.redirect(
+      new URL(`/r/${DEFAULT_TENANT}${rest}${search}`, request.url),
+    );
   }
 
   // Old restaurant locale paths → /r/{tenant}/...

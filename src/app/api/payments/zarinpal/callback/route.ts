@@ -7,7 +7,7 @@ import { getPaymentProvider } from "@/lib/payments";
  */
 export async function GET(req: NextRequest) {
   const orderId = req.nextUrl.searchParams.get("orderId");
-  const tenantSlug = req.nextUrl.searchParams.get("tenant") || "chashni";
+  const tenantSlug = req.nextUrl.searchParams.get("tenant") || "namakdan";
   const authority = req.nextUrl.searchParams.get("Authority");
   const status = req.nextUrl.searchParams.get("Status");
 

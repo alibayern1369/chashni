@@ -28,5 +28,5 @@ export const getUser = cache(async () => {
  */
 export const getTenantSlug = cache(async () => {
   const headerStore = await headers();
-  return headerStore.get("x-tenant-slug") || process.env.NEXT_PUBLIC_DEFAULT_TENANT || "chashni";
+  return headerStore.get("x-tenant-slug") || process.env.NEXT_PUBLIC_DEFAULT_TENANT || "namakdan";
 });
