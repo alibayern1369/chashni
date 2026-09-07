@@ -95,12 +95,26 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
                   <div className="space-y-3">
                     {items.map((cartItem, index) => {
                       const isBurger = cartItem.menuItemId === "custom-burger";
-                      const menuItem = !isBurger ? menuItems.find((m) => m.id === cartItem.menuItemId) : null;
+                      const menuItem = !isBurger
+                        ? menuItems.find((m) => m.id === cartItem.menuItemId)
+                        : null;
+                      const burger = cartItem.customBurger
+                        ? {
+                            ...cartItem.customBurger,
+                            cheese: cartItem.customBurger.cheese || [],
+                            toppings: cartItem.customBurger.toppings || [],
+                            sauce: cartItem.customBurger.sauce || [],
+                          }
+                        : null;
                       const name = isBurger
-                        ? getCustomBurgerName(cartItem.customBurger!, locale)
+                        ? getCustomBurgerName(burger, locale)
                         : menuItem
-                          ? (locale === "fa" ? menuItem.nameFa : menuItem.nameEn)
-                          : "";
+                          ? locale === "fa"
+                            ? menuItem.nameFa
+                            : menuItem.nameEn
+                          : locale === "fa"
+                            ? "آیتم نامشخص"
+                            : "Unknown item";
                       const itemTotal = calculateItemPrice(cartItem, menuItems);
 
                       if (!isBurger && !menuItem) return null;
@@ -129,39 +143,57 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
                           <div className="flex flex-1 flex-col justify-between min-w-0">
                             <div>
                               <h4 className="text-sm font-semibold text-[#faf5e4] truncate">{name}</h4>
-                              {isBurger && cartItem.customBurger && (
+                              {isBurger && burger && (
                                 <div className="text-[10px] text-[#666] space-y-0.5">
-                                  {cartItem.customBurger.bun && (
-                                    <p>{locale === "fa" ? "نان" : "Bun"}: {getBurgerDetailNames([cartItem.customBurger.bun], "bun", locale, burgerOptions)}</p>
+                                  {burger.bun && (
+                                    <p>
+                                      {locale === "fa" ? "نان" : "Bun"}:{" "}
+                                      {getBurgerDetailNames([burger.bun], "bun", locale, burgerOptions)}
+                                    </p>
                                   )}
-                                  {cartItem.customBurger.patty && (
-                                    <p>{locale === "fa" ? "پتی" : "Patty"}: {getBurgerDetailNames([cartItem.customBurger.patty], "patty", locale, burgerOptions)}</p>
+                                  {burger.patty && (
+                                    <p>
+                                      {locale === "fa" ? "پتی" : "Patty"}:{" "}
+                                      {getBurgerDetailNames([burger.patty], "patty", locale, burgerOptions)}
+                                    </p>
                                   )}
-                                  {cartItem.customBurger.cheese.length > 0 && (
-                                    <p>{locale === "fa" ? "پنیر" : "Cheese"}: {getBurgerDetailNames(cartItem.customBurger.cheese, "cheese", locale, burgerOptions)}</p>
+                                  {burger.cheese.length > 0 && (
+                                    <p>
+                                      {locale === "fa" ? "پنیر" : "Cheese"}:{" "}
+                                      {getBurgerDetailNames(burger.cheese, "cheese", locale, burgerOptions)}
+                                    </p>
                                   )}
-                                  {cartItem.customBurger.toppings.length > 0 && (
-                                    <p>{locale === "fa" ? "تاسینگ" : "Toppings"}: {getBurgerDetailNames(cartItem.customBurger.toppings, "toppings", locale, burgerOptions)}</p>
+                                  {burger.toppings.length > 0 && (
+                                    <p>
+                                      {locale === "fa" ? "مخلفات" : "Toppings"}:{" "}
+                                      {getBurgerDetailNames(burger.toppings, "toppings", locale, burgerOptions)}
+                                    </p>
                                   )}
-                                  {cartItem.customBurger.sauce.length > 0 && (
-                                    <p>{locale === "fa" ? "سس" : "Sauce"}: {getBurgerDetailNames(cartItem.customBurger.sauce, "sauce", locale, burgerOptions)}</p>
+                                  {burger.sauce.length > 0 && (
+                                    <p>
+                                      {locale === "fa" ? "سس" : "Sauce"}:{" "}
+                                      {getBurgerDetailNames(burger.sauce, "sauce", locale, burgerOptions)}
+                                    </p>
                                   )}
                                 </div>
                               )}
-                              {!isBurger && Object.entries(cartItem.selectedOptions).map(([groupId, optIds]) => {
-                                const group = menuItem!.options.find((g) => g.id === groupId);
-                                if (!group) return null;
-                                const names = optIds.map((id) => {
-                                  const opt = group.options.find((o) => o.id === id);
-                                  return opt ? (locale === "fa" ? opt.nameFa : opt.nameEn) : "";
-                                }).filter(Boolean);
-                                if (names.length === 0) return null;
-                                return (
-                                  <p key={groupId} className="text-[10px] text-[#666] truncate">
-                                    {locale === "fa" ? group.nameFa : group.nameEn}: {names.join(", ")}
-                                  </p>
-                                );
-                              })}
+                              {!isBurger &&
+                                Object.entries(cartItem.selectedOptions || {}).map(([groupId, optIds]) => {
+                                  const group = menuItem!.options.find((g) => g.id === groupId);
+                                  if (!group) return null;
+                                  const names = optIds
+                                    .map((id) => {
+                                      const opt = group.options.find((o) => o.id === id);
+                                      return opt ? (locale === "fa" ? opt.nameFa : opt.nameEn) : "";
+                                    })
+                                    .filter(Boolean);
+                                  if (names.length === 0) return null;
+                                  return (
+                                    <p key={groupId} className="text-[10px] text-[#666] truncate">
+                                      {locale === "fa" ? group.nameFa : group.nameEn}: {names.join(", ")}
+                                    </p>
+                                  );
+                                })}
                             </div>
 
                             <div className="flex items-center justify-between mt-1">

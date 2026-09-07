@@ -39,7 +39,6 @@ export const burgerOptions: BurgerCategory[] = [
     nameEn: "Cheese",
     selectionMode: "multi",
     required: true,
-    maxSelect: 3,
     options: [
       { id: "cheese-cheddar", nameFa: "چدار استاندارد", nameEn: "Standard Cheddar", price: 28000, calories: 110, image: null, available: true, sortOrder: 1 },
       { id: "cheese-extra-cheddar", nameFa: "چدار اضافه", nameEn: "Extra Cheddar", price: 38000, calories: 220, image: null, available: true, sortOrder: 2 },
@@ -53,7 +52,6 @@ export const burgerOptions: BurgerCategory[] = [
     nameEn: "Toppings",
     selectionMode: "multi",
     required: true,
-    maxSelect: 6,
     options: [
       { id: "top-lettuce", nameFa: "کاهو", nameEn: "Lettuce", price: 12000, calories: 5, image: null, available: true, sortOrder: 1 },
       { id: "top-tomato", nameFa: "گوجه", nameEn: "Tomato", price: 15000, calories: 10, image: null, available: true, sortOrder: 2 },
@@ -71,7 +69,6 @@ export const burgerOptions: BurgerCategory[] = [
     nameEn: "Sauce",
     selectionMode: "multi",
     required: true,
-    maxSelect: 3,
     options: [
       { id: "sauce-chashni", nameFa: "سس مخصوص نمکدان", nameEn: "Namakdan Special", price: 18000, calories: 60, image: null, available: true, sortOrder: 1 },
       { id: "sauce-ketchup", nameFa: "کچاپ", nameEn: "Ketchup", price: 8000, calories: 20, image: null, available: true, sortOrder: 2 },

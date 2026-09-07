@@ -1,15 +1,25 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, ShoppingBag, Flame } from "lucide-react";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useMenuContext } from "@/lib/providers/data-provider";
+import { useToast } from "@/lib/providers/toast-provider";
 import { cn, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { BurgerVisual, type BurgerVisualState } from "./burger-visual";
-import { CUSTOM_BURGER_BASE_PRICE, type BurgerOption } from "@/lib/types";
+import { BurgerVisual } from "./burger-visual";
+import {
+  CUSTOM_BURGER_BASE_PRICE,
+  type BurgerOption,
+} from "@/lib/types";
+import {
+  DEFAULT_TENANT_SLUG,
+  pathForLocale,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 
 interface BurgerBuilderProps {
   className?: string;
@@ -20,28 +30,34 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
   const { locale } = useLocaleContext();
   const { addItem } = useCartContext();
   const { burgerOptions } = useMenuContext();
+  const { showToast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
+
   const steps = burgerOptions;
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [burgerName, setBurgerName] = useState("");
   const [isComplete, setIsComplete] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const step = steps[currentStep];
   const isLast = currentStep === steps.length - 1;
   const isFirst = currentStep === 0;
   const isMultiSelect =
-    step.selectionMode === "multi" ||
-    step.id === "cheese" ||
-    step.id === "toppings" ||
-    step.id === "sauce";
+    step?.selectionMode === "multi" ||
+    step?.id === "cheese" ||
+    step?.id === "toppings" ||
+    step?.id === "sauce";
 
-  const visualState: BurgerVisualState = useMemo(
+  const visualState = useMemo(
     () => ({
-      bun: (selections.bun || [])[0],
-      patty: (selections.patty || [])[0],
-      cheese: selections.cheese || [],
-      toppings: selections.toppings || [],
-      sauce: selections.sauce || [],
+      hasBun: (selections.bun || []).length > 0,
+      hasPatty: (selections.patty || []).length > 0,
+      hasCheese: (selections.cheese || []).length > 0,
+      hasToppings: (selections.toppings || []).length > 0,
+      hasSauce: (selections.sauce || []).length > 0,
     }),
     [selections],
   );
@@ -76,43 +92,60 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
     (catId: string, optId: string) => {
       setSelections((prev) => {
         const current = prev[catId] || [];
-        const cat = steps.find((s) => s.id === catId);
-        const max = cat?.maxSelect ?? 99;
         if (isMultiSelect) {
           if (current.includes(optId)) {
             return { ...prev, [catId]: current.filter((id) => id !== optId) };
           }
-          if (current.length >= max) return prev;
           return { ...prev, [catId]: [...current, optId] };
         }
         return { ...prev, [catId]: current.includes(optId) ? [] : [optId] };
       });
     },
-    [isMultiSelect, steps],
+    [isMultiSelect],
   );
 
-  const canProceed = useMemo(() => {
-    const current = selections[step.id] || [];
-    return current.length > 0;
-  }, [selections, step]);
-
   const handleAddToCart = useCallback(() => {
-    addItem({
-      menuItemId: "custom-burger",
-      quantity: 1,
-      selectedOptions: {},
-      selectedExtras: [],
-      customBurger: {
-        name: burgerName || undefined,
-        bun: (selections.bun || [])[0] || "",
-        patty: (selections.patty || [])[0] || "",
-        cheese: selections.cheese || [],
-        toppings: selections.toppings || [],
-        sauce: selections.sauce || [],
-      },
-    });
-    onComplete?.();
-  }, [selections, burgerName, addItem, onComplete]);
+    if (adding) return;
+    setAdding(true);
+    try {
+      addItem({
+        menuItemId: "custom-burger",
+        quantity: 1,
+        selectedOptions: {},
+        selectedExtras: [],
+        customBurger: {
+          name: burgerName.trim() || undefined,
+          bun: (selections.bun || [])[0] || "",
+          patty: (selections.patty || [])[0] || "",
+          cheese: [...(selections.cheese || [])],
+          toppings: [...(selections.toppings || [])],
+          sauce: [...(selections.sauce || [])],
+        },
+      });
+      showToast(
+        locale === "fa" ? "برگر به سبد اضافه شد" : "Burger added to cart",
+        "success",
+      );
+      onComplete?.();
+      router.push(pathForLocale("/menu", locale, slug));
+    } catch {
+      showToast(
+        locale === "fa" ? "خطا در افزودن به سبد" : "Could not add to cart",
+        "error",
+      );
+      setAdding(false);
+    }
+  }, [
+    adding,
+    addItem,
+    burgerName,
+    selections,
+    showToast,
+    locale,
+    onComplete,
+    router,
+    slug,
+  ]);
 
   const findOption = (catId: string, optId: string): BurgerOption | undefined => {
     const cat = steps.find((s) => s.id === catId);
@@ -128,6 +161,10 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
       .filter(Boolean);
   };
 
+  if (!step) {
+    return null;
+  }
+
   if (isComplete) {
     return (
       <div className={cn("mx-auto max-w-xl", className)}>
@@ -138,7 +175,8 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
         >
           <BurgerVisual state={visualState} className="mb-5" />
           <h3 className="text-center text-xl font-black text-[var(--color-text)]">
-            {burgerName || (locale === "fa" ? "برگر سفارشی نمکدان" : "Namakdan Custom Burger")}
+            {burgerName ||
+              (locale === "fa" ? "برگر سفارشی نمکدان" : "Namakdan Custom Burger")}
           </h3>
 
           <div className="my-6 flex items-center justify-center gap-8">
@@ -177,23 +215,37 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
                   <span className="text-[var(--color-text-muted)]">
                     {locale === "fa" ? s.nameFa : s.nameEn}
                   </span>
-                  <span className="text-right text-[var(--color-text)]">{names.join("، ")}</span>
+                  <span className="text-right text-[var(--color-text)]">
+                    {names.join("، ")}
+                  </span>
                 </div>
               );
             })}
           </div>
 
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => setIsComplete(false)} className="flex-1">
+            <Button
+              variant="secondary"
+              onClick={() => setIsComplete(false)}
+              className="flex-1"
+              disabled={adding}
+            >
               {locale === "fa" ? "ویرایش" : "Edit"}
             </Button>
             <Button
               variant="primary"
               onClick={handleAddToCart}
+              disabled={adding}
               icon={<ShoppingBag size={16} />}
               className="flex-1"
             >
-              {locale === "fa" ? "افزودن به سبد" : "Add to Cart"}
+              {adding
+                ? locale === "fa"
+                  ? "در حال افزودن…"
+                  : "Adding…"
+                : locale === "fa"
+                  ? "افزودن به سبد"
+                  : "Add to Cart"}
             </Button>
           </div>
         </motion.div>
@@ -203,7 +255,6 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
 
   return (
     <div className={cn("mx-auto max-w-xl", className)}>
-      {/* Progress pills */}
       <div className="mb-5 flex items-center gap-2">
         {steps.map((s, i) => {
           const done = (selections[s.id] || []).length > 0;
@@ -252,13 +303,8 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
 
       <p className="mb-3 px-1 text-[11px] text-[var(--color-text-muted)]">
         {locale === "fa"
-          ? `پایه ساخت: ${formatPrice(CUSTOM_BURGER_BASE_PRICE, locale)} + انتخاب‌ها`
-          : `Base ${formatPrice(CUSTOM_BURGER_BASE_PRICE, locale)} + selections`}
-        {isMultiSelect
-          ? locale === "fa"
-            ? " — می‌تونی چند تا انتخاب کنی"
-            : " — multi-select"
-          : ""}
+          ? `پایه ساخت: ${formatPrice(CUSTOM_BURGER_BASE_PRICE, locale)} — بدون محدودیت انتخاب`
+          : `Base ${formatPrice(CUSTOM_BURGER_BASE_PRICE, locale)} — unlimited picks`}
       </p>
 
       <AnimatePresence mode="wait">
@@ -342,7 +388,6 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
           <Button
             variant="primary"
             onClick={() => setIsComplete(true)}
-            disabled={!canProceed}
             icon={<ShoppingBag size={16} />}
             className="flex-1"
           >
@@ -352,7 +397,6 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
           <Button
             variant="primary"
             onClick={() => setCurrentStep((p) => p + 1)}
-            disabled={!canProceed}
             icon={locale === "fa" ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
             iconPosition={locale === "fa" ? "left" : "right"}
             className="flex-1"

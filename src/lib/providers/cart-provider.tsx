@@ -3,15 +3,38 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import type { CartItem, CartState, OrderType } from "@/lib/types";
 import { useMenuContext } from "@/lib/providers/data-provider";
-import { calculateCartTotal } from "@/lib/utils";
+import { calculateCartTotal, normalizeCustomBurger } from "@/lib/utils";
 
 const STORAGE_KEY = "chashni-cart";
+
+function sanitizeCart(raw: CartState): CartState {
+  const items = Array.isArray(raw?.items)
+    ? raw.items
+        .filter((item): item is CartItem => Boolean(item && item.menuItemId && item.quantity > 0))
+        .map((item) => ({
+          ...item,
+          selectedOptions: item.selectedOptions || {},
+          selectedExtras: item.selectedExtras || [],
+          customBurger: item.customBurger
+            ? normalizeCustomBurger(item.customBurger)
+            : item.menuItemId === "custom-burger"
+              ? normalizeCustomBurger({})
+              : undefined,
+        }))
+    : [];
+  return {
+    items,
+    orderType: raw?.orderType === "takeaway" ? "takeaway" : "dine-in",
+    table: raw?.table,
+  };
+}
 
 function getStoredCart(): CartState {
   if (typeof window === "undefined") return { items: [], orderType: "dine-in" };
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? (JSON.parse(stored) as CartState) : { items: [], orderType: "dine-in" };
+    if (!stored) return { items: [], orderType: "dine-in" };
+    return sanitizeCart(JSON.parse(stored) as CartState);
   } catch {
     return { items: [], orderType: "dine-in" };
   }
@@ -67,7 +90,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const addItem = useCallback((item: CartItem) => {
-    setState((prev) => ({ ...prev, items: [...prev.items, item] }));
+    const next: CartItem = {
+      ...item,
+      quantity: Math.max(1, item.quantity || 1),
+      selectedOptions: item.selectedOptions || {},
+      selectedExtras: item.selectedExtras || [],
+      customBurger: item.customBurger
+        ? normalizeCustomBurger(item.customBurger)
+        : item.menuItemId === "custom-burger"
+          ? normalizeCustomBurger({})
+          : undefined,
+    };
+    setState((prev) => ({ ...prev, items: [...prev.items, next] }));
   }, []);
 
   const removeItem = useCallback((index: number) => {
@@ -112,10 +146,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => state.items.reduce((sum, item) => sum + item.quantity, 0),
     [state.items],
   );
-  const totals = useMemo(
-    () => calculateCartTotal(state.items, menuItems),
-    [state.items, menuItems],
-  );
+  const totals = useMemo(() => {
+    try {
+      return calculateCartTotal(state.items, menuItems);
+    } catch {
+      return { subtotal: 0, discount: 0, total: 0 };
+    }
+  }, [state.items, menuItems]);
   const discount = Math.max(totals.discount, extraDiscount);
   const total = Math.max(0, totals.subtotal - discount);
 

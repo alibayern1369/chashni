@@ -77,9 +77,19 @@ export default function CartPage() {
             {/* Items */}
             <div className="space-y-3">
               {items.map((cartItem, index) => {
-                const menuItem = menuItems.find((m) => m.id === cartItem.menuItemId);
-                if (!menuItem) return null;
-                const name = isRtl ? menuItem.nameFa : menuItem.nameEn;
+                const isBurger = cartItem.menuItemId === "custom-burger";
+                const menuItem = !isBurger
+                  ? menuItems.find((m) => m.id === cartItem.menuItemId)
+                  : null;
+                if (!isBurger && !menuItem) return null;
+
+                const name = isBurger
+                  ? isRtl
+                    ? cartItem.customBurger?.name || "برگر سفارشی نمکدان"
+                    : cartItem.customBurger?.name || "Namakdan Custom Burger"
+                  : isRtl
+                    ? menuItem!.nameFa
+                    : menuItem!.nameEn;
                 const itemTotal = calculateItemPrice(cartItem, menuItems);
 
                 return (
@@ -88,13 +98,21 @@ export default function CartPage() {
                     layout
                     className="flex gap-3 rounded-2xl bg-[#141414] border border-[#1e1e1e] p-3"
                   >
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#1a1a1a]">
-                      <img src={menuItem.image} alt={name} className="h-full w-full object-cover" />
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#1a1a1a]">
+                      {isBurger ? (
+                        <span className="text-3xl">🍔</span>
+                      ) : (
+                        <img
+                          src={menuItem!.image}
+                          alt={name}
+                          className="h-full w-full object-cover"
+                        />
+                      )}
                     </div>
                     <div className="flex flex-1 flex-col justify-between min-w-0">
                       <div>
                         <h4 className="text-sm font-semibold text-[#faf5e4] truncate">{name}</h4>
-                        {cartItem.customBurger && (
+                        {isBurger && (
                           <p className="text-[10px] text-amber-400">
                             {isRtl ? "برگر سفارشی" : "Custom Burger"}
                           </p>
