@@ -261,11 +261,23 @@ export async function POST(req: NextRequest) {
   const paymentStatus =
     paymentMethod === "online" ? "pending" : "unpaid";
 
-  const { data: order, error } = await supabase
+  // Prefer service role (bypasses RLS). Without it, fall back to the request
+  // client and insert as guest (user_id null) so orders_insert_anon passes —
+  // logged-in customers otherwise hit RLS because that policy requires user_id IS NULL.
+  let writer = supabase;
+  let useServiceRole = false;
+  try {
+    writer = createServiceClient();
+    useServiceRole = true;
+  } catch {
+    useServiceRole = false;
+  }
+
+  const { data: order, error } = await writer
     .from("orders")
     .insert({
       tenant_id: tenant.id,
-      user_id: user?.id ?? null,
+      user_id: useServiceRole ? user?.id ?? null : null,
       table_id: tableId,
       status: "received",
       order_type: body.orderType,
@@ -282,16 +294,23 @@ export async function POST(req: NextRequest) {
       payment_status: paymentStatus,
       promo_code: promoCode,
       delivery_address: body.deliveryAddress ?? null,
-      loyalty_points_earned: loyaltyPoints,
+      loyalty_points_earned: useServiceRole ? loyaltyPoints : 0,
     })
     .select()
     .single();
 
   if (error || !order) {
-    return apiError(error?.message || "Failed to create order", 500);
+    const msg = error?.message || "Failed to create order";
+    if (/row level security|rls/i.test(msg)) {
+      return apiError(
+        "ثبت سفارش به خاطر محدودیت امنیتی دیتابیس ناموفق بود. SUPABASE_SERVICE_ROLE_KEY را در Vercel تنظیم کنید یا migration 006 را در Supabase اجرا کنید.",
+        500,
+      );
+    }
+    return apiError(msg, 500);
   }
 
-  if (loyaltyPoints > 0 && user) {
+  if (loyaltyPoints > 0 && user && useServiceRole) {
     const service = createServiceClient();
     const { data: existing } = await service
       .from("loyalty_balances")
