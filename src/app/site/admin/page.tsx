@@ -25,7 +25,7 @@ export default function SiteAdminPage() {
             </Link>
           </li>
           <li className="border-t border-[#1e1e1e] pt-3 text-[#666]">
-            لندینگ CMS خود رستوران چاشنی:{" "}
+            لندینگ CMS خود رستوران نمکدان:{" "}
             <Link
               href={restaurantPath("/admin/pages")}
               className="text-amber-400 hover:underline"

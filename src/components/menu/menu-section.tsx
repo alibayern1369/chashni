@@ -30,15 +30,23 @@ export function MenuSection({
 
   return (
     <section id={`category-${categoryId}`} className={cn("scroll-mt-32", className)}>
-      <div className="flex items-center gap-2 mb-4">
-        {categoryIcon && <span className="text-xl">{categoryIcon}</span>}
-        <h2 className="text-lg font-bold text-[#faf5e4]">
-          {locale === "fa" ? categoryNameFa : categoryNameEn}
-        </h2>
-        <span className="text-xs text-[#555] ml-auto">{items.length} items</span>
+      <div className="mb-5 flex items-center gap-3">
+        {categoryIcon && (
+          <span className="glass flex h-10 w-10 items-center justify-center rounded-2xl text-lg">
+            {categoryIcon}
+          </span>
+        )}
+        <div>
+          <h2 className="text-lg font-black tracking-tight text-[var(--color-text)]">
+            {locale === "fa" ? categoryNameFa : categoryNameEn}
+          </h2>
+          <p className="text-[11px] text-[var(--color-text-muted)]">
+            {items.length} {locale === "fa" ? "غذا" : "dishes"}
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <ProductCard
             key={item.id}

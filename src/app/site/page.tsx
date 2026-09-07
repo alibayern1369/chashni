@@ -46,7 +46,7 @@ export default function PlatformLandingPage() {
             href={restaurantPath("/menu")}
             className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-bold text-black hover:bg-amber-400"
           >
-            منوی رستوران چاشنی
+            منوی رستوران نمکدان
           </Link>
           <Link
             href={restaurantPath("/admin")}

@@ -124,7 +124,7 @@ export default function HomePage() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push(locale === "fa" ? restaurantPath("/menu", slug) : "/en/menu")}
-              className="flex items-center gap-2 rounded-xl bg-amber-500 text-black px-8 py-3.5 font-bold text-sm hover:bg-amber-400 transition-colors"
+              className="btn-namakdan flex items-center gap-2 rounded-2xl px-8 py-3.5 text-sm"
             >
               <Utensils size={18} />
               {isRtl ? "مشاهده منو" : "View Menu"}
@@ -139,9 +139,9 @@ export default function HomePage() {
                     : "/en/build-burger",
                 )
               }
-              className="flex items-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] text-[#ccc] px-6 py-3.5 font-bold text-sm hover:border-[#555] transition-colors"
+              className="glass flex items-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-bold text-[var(--color-text)] transition-all hover:border-white/25"
             >
-              <Sparkles size={16} />
+              <Sparkles size={16} className="text-[var(--pastel-peach)]" />
               {isRtl ? "برگر بساز" : "Build Burger"}
             </motion.button>
           </div>

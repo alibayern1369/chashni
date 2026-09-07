@@ -87,12 +87,12 @@ export default function QrDemoPage() {
           <p style="font-size:48px;font-weight:900;color:#111;margin:0 0 16px;">${t.number}</p>
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}" width="200" height="200" style="margin:0 0 12px;" />
           <p style="font-size:11px;color:#999;font-family:monospace;word-break:break-all;">${url}</p>
-          <p style="font-size:11px;color:#f59e0b;font-weight:bold;margin-top:8px;">CHASHNI — چاشنی</p>
+          <p style="font-size:11px;color:#a8e6cf;font-weight:bold;margin-top:8px;">نمکدان — Namakdan</p>
         </div>`;
     }).join("");
 
     printWindow.document.write(`
-      <html><head><title>CHASHNI QR Codes</title>
+      <html><head><title>Namakdan QR Codes</title>
       <style>body{font-family:sans-serif;text-align:center;padding:40px;}</style>
       </head><body>${cards}</body></html>
     `);
@@ -105,7 +105,7 @@ export default function QrDemoPage() {
     <div className="min-h-screen px-4 py-8">
       <div className="mx-auto max-w-3xl text-center mb-10">
         <h1 className="text-3xl font-black text-[#faf5e4] mb-2 tracking-tight">
-          {isRtl ? "کدهای QR میزها" : "CHASHNI QR Tables"}
+          {isRtl ? "کدهای QR میزها" : "Namakdan QR Tables"}
         </h1>
         <p className="text-sm text-[#888] mb-6">
           {isRtl

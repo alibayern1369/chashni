@@ -22,7 +22,7 @@ const burgerOptions: MenuItem["options"] = [
     required: true,
     options: [
       { id: "bun-brioche", nameFa: "بریوشه", nameEn: "Brioche", priceModifier: 0 },
-      { id: "bun-sesame", nameFa: "کنجدی", nameEn: "Sesame", priceModifier: 0 },
+      { id: "bun-sesame", nameFa: "کنجدی", nameEn: "Sesame", priceModifier: 5000 },
       { id: "bun-whole", nameFa: "سبوس‌دار", nameEn: "Whole Wheat", priceModifier: 12000 },
     ],
   },

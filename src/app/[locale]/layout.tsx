@@ -68,7 +68,6 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
               const restByTab: Record<string, string> = {
                 home: "/",
                 menu: "/menu",
-                build: "/build-burger",
                 favorites: "/favorites",
                 cart: "/cart",
               };

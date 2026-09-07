@@ -12,19 +12,19 @@ const SECTIONS: { title: string; links: { href: string; label: string }[] }[] = 
     ],
   },
   {
-    title: "۲) رستوران چاشنی — مشتری",
+    title: "۲) رستوران نمکدان — مشتری",
     links: [
-      { href: restaurantPath(), label: "هوم رستوران" },
+      { href: restaurantPath(), label: "هوم نمکدان" },
       { href: restaurantPath("/menu"), label: "منو" },
       { href: restaurantPath("/menu") + "?table=07", label: "منو با میز ۰۷" },
-      { href: restaurantPath("/build-burger"), label: "ساخت برگر" },
+      { href: restaurantPath("/build-burger"), label: "ساخت برگر (فقط از لندینگ)" },
       { href: restaurantPath("/cart"), label: "سبد" },
       { href: restaurantPath("/checkout"), label: "تسویه" },
       { href: restaurantPath("/login"), label: "ورود مشتری/ادمین رستوران" },
     ],
   },
   {
-    title: "۳) رستوران چاشنی — ادمین",
+    title: "۳) رستوران نمکدان — ادمین",
     links: [
       { href: restaurantPath("/admin"), label: "سفارش‌ها" },
       { href: restaurantPath("/admin/menu"), label: "مدیریت منو" },

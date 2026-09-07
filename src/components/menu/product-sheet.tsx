@@ -217,11 +217,13 @@ export function ProductSheet({ item, onClose, className }: ProductSheetProps) {
                             </div>
                             <span>{locale === "fa" ? opt.nameFa : opt.nameEn}</span>
                           </div>
-                          {opt.priceModifier !== 0 && (
-                            <span className="text-xs text-[#888]">
-                              {opt.priceModifier > 0 ? "+" : ""} {formatPrice(opt.priceModifier, locale)}
-                            </span>
-                          )}
+                          <span className="text-xs tabular-nums text-[var(--pastel-peach)]">
+                            {opt.priceModifier === 0
+                              ? locale === "fa"
+                                ? "شامل قیمت پایه"
+                                : "Included"
+                              : `${opt.priceModifier > 0 ? "+" : ""} ${formatPrice(opt.priceModifier, locale)}`}
+                          </span>
                         </button>
                       );
                     })}
@@ -261,8 +263,10 @@ export function ProductSheet({ item, onClose, className }: ProductSheetProps) {
                             </div>
                             <span>{locale === "fa" ? extra.nameFa : extra.nameEn}</span>
                           </div>
-                          <span className="text-xs text-[#888]">
-                            {extra.price > 0 ? `+ ${formatPrice(extra.price, locale)}` : (locale === "fa" ? "رایگان" : "Free")}
+                          <span className="text-xs tabular-nums text-[var(--pastel-peach)]">
+                            {extra.price > 0
+                              ? `+ ${formatPrice(extra.price, locale)}`
+                              : formatPrice(0, locale)}
                           </span>
                         </button>
                       );

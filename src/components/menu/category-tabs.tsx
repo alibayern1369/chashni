@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useMenuContext } from "@/lib/providers/data-provider";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
@@ -12,7 +12,11 @@ interface CategoryTabsProps {
   className?: string;
 }
 
-export function CategoryTabs({ activeCategory, onCategorySelect, className }: CategoryTabsProps) {
+export function CategoryTabs({
+  activeCategory,
+  onCategorySelect,
+  className,
+}: CategoryTabsProps) {
   const { locale } = useLocaleContext();
   const { categories } = useMenuContext();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -32,11 +36,11 @@ export function CategoryTabs({ activeCategory, onCategorySelect, className }: Ca
       ref={scrollRef}
       className={cn(
         "sticky top-16 z-40 overflow-x-auto scrollbar-none",
-        "bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-[#1e1e1e]",
-        className
+        "border-b border-white/8 bg-[#07090c]/65 backdrop-blur-2xl",
+        className,
       )}
     >
-      <div className="mx-auto flex max-w-7xl gap-1 px-4 py-2">
+      <div className="mx-auto flex max-w-7xl gap-2 px-4 py-3">
         {categories.map((cat) => {
           const isActive = activeCategory === cat.slug;
 
@@ -46,17 +50,15 @@ export function CategoryTabs({ activeCategory, onCategorySelect, className }: Ca
               ref={isActive ? activeRef : undefined}
               onClick={() => onCategorySelect?.(cat.slug)}
               className={cn(
-                "relative flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap",
-                isActive
-                  ? "text-amber-400"
-                  : "text-[#888] hover:text-[#ccc]"
+                "relative flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors",
+                isActive ? "text-[#0b0d10]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
               )}
             >
               {isActive && (
                 <motion.div
                   layoutId="category-tab-bg"
-                  className="absolute inset-0 rounded-full bg-amber-500/10 border border-amber-500/20"
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="absolute inset-0 rounded-full bg-gradient-to-r from-[var(--pastel-mint)] to-[var(--pastel-peach)] shadow-[0_8px_24px_rgba(168,230,207,0.25)]"
+                  transition={{ type: "spring", stiffness: 320, damping: 26 }}
                 />
               )}
               <span className="relative z-10">{cat.icon}</span>

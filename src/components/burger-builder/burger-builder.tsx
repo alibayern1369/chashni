@@ -2,13 +2,14 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, ShoppingBag, Flame, DollarSign } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ShoppingBag, Flame } from "lucide-react";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useMenuContext } from "@/lib/providers/data-provider";
 import { cn, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import type { BurgerCategory, BurgerOption } from "@/lib/types";
+import { BurgerVisual, type BurgerVisualState } from "./burger-visual";
+import { CUSTOM_BURGER_BASE_PRICE, type BurgerOption } from "@/lib/types";
 
 interface BurgerBuilderProps {
   className?: string;
@@ -28,10 +29,25 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
   const step = steps[currentStep];
   const isLast = currentStep === steps.length - 1;
   const isFirst = currentStep === 0;
-  const isMultiSelect = step.id === "cheese" || step.id === "toppings" || step.id === "sauce";
+  const isMultiSelect =
+    step.selectionMode === "multi" ||
+    step.id === "cheese" ||
+    step.id === "toppings" ||
+    step.id === "sauce";
+
+  const visualState: BurgerVisualState = useMemo(
+    () => ({
+      bun: (selections.bun || [])[0],
+      patty: (selections.patty || [])[0],
+      cheese: selections.cheese || [],
+      toppings: selections.toppings || [],
+      sauce: selections.sauce || [],
+    }),
+    [selections],
+  );
 
   const totalPrice = useMemo(() => {
-    let price = 0;
+    let price = CUSTOM_BURGER_BASE_PRICE;
     for (const [catId, optIds] of Object.entries(selections)) {
       const cat = steps.find((s) => s.id === catId);
       if (!cat) continue;
@@ -41,7 +57,7 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
       }
     }
     return price;
-  }, [selections]);
+  }, [selections, steps]);
 
   const totalCalories = useMemo(() => {
     let cal = 0;
@@ -54,32 +70,31 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
       }
     }
     return cal;
-  }, [selections]);
+  }, [selections, steps]);
 
-  const handleSelect = useCallback((catId: string, optId: string) => {
-    setSelections((prev) => {
-      const current = prev[catId] || [];
-      if (isMultiSelect) {
-        if (current.includes(optId)) {
-          return { ...prev, [catId]: current.filter((id) => id !== optId) };
+  const handleSelect = useCallback(
+    (catId: string, optId: string) => {
+      setSelections((prev) => {
+        const current = prev[catId] || [];
+        const cat = steps.find((s) => s.id === catId);
+        const max = cat?.maxSelect ?? 99;
+        if (isMultiSelect) {
+          if (current.includes(optId)) {
+            return { ...prev, [catId]: current.filter((id) => id !== optId) };
+          }
+          if (current.length >= max) return prev;
+          return { ...prev, [catId]: [...current, optId] };
         }
-        return { ...prev, [catId]: [...current, optId] };
-      }
-      if (current.includes(optId)) {
-        return { ...prev, [catId]: [] };
-      }
-      return { ...prev, [catId]: [optId] };
-    });
-  }, [isMultiSelect]);
+        return { ...prev, [catId]: current.includes(optId) ? [] : [optId] };
+      });
+    },
+    [isMultiSelect, steps],
+  );
 
   const canProceed = useMemo(() => {
     const current = selections[step.id] || [];
     return current.length > 0;
   }, [selections, step]);
-
-  const handleComplete = useCallback(() => {
-    setIsComplete(true);
-  }, []);
 
   const handleAddToCart = useCallback(() => {
     addItem({
@@ -89,11 +104,11 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
       selectedExtras: [],
       customBurger: {
         name: burgerName || undefined,
-        bun: (selections["bun"] || [])[0] || "",
-        patty: (selections["patty"] || [])[0] || "",
-        cheese: selections["cheese"] || [],
-        toppings: selections["toppings"] || [],
-        sauce: selections["sauce"] || [],
+        bun: (selections.bun || [])[0] || "",
+        patty: (selections.patty || [])[0] || "",
+        cheese: selections.cheese || [],
+        toppings: selections.toppings || [],
+        sauce: selections.sauce || [],
       },
     });
     onComplete?.();
@@ -105,68 +120,71 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
   };
 
   const getSelectedNames = (catId: string): string[] => {
-    const opts = selections[catId] || [];
-    return opts.map((id) => {
-      const opt = findOption(catId, id);
-      return opt ? (locale === "fa" ? opt.nameFa : opt.nameEn) : "";
-    }).filter(Boolean);
+    return (selections[catId] || [])
+      .map((id) => {
+        const opt = findOption(catId, id);
+        return opt ? (locale === "fa" ? opt.nameFa : opt.nameEn) : "";
+      })
+      .filter(Boolean);
   };
 
   if (isComplete) {
     return (
-      <div className={cn("max-w-lg mx-auto", className)}>
+      <div className={cn("mx-auto max-w-xl", className)}>
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-6 text-center"
+          className="glass-strong rounded-[1.75rem] p-6"
         >
-          <span className="text-5xl block mb-4">🍔</span>
-          <h3 className="text-xl font-black text-[#faf5e4] mb-1">
-            {burgerName || (locale === "fa" ? "برگر سفارشی من" : "My Custom Burger")}
+          <BurgerVisual state={visualState} className="mb-5" />
+          <h3 className="text-center text-xl font-black text-[var(--color-text)]">
+            {burgerName || (locale === "fa" ? "برگر سفارشی نمکدان" : "Namakdan Custom Burger")}
           </h3>
 
-          <div className="flex items-center justify-center gap-6 my-6">
+          <div className="my-6 flex items-center justify-center gap-8">
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-amber-400 mb-1">
+              <div className="mb-1 flex items-center justify-center gap-1 text-[var(--pastel-peach)]">
                 <Flame size={18} />
-                <span className="text-2xl font-black">{totalCalories}</span>
+                <span className="text-2xl font-black tabular-nums">{totalCalories}</span>
               </div>
-              <span className="text-[10px] text-[#666] uppercase tracking-wider">
+              <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
                 {locale === "fa" ? "کالری" : "Calories"}
               </span>
             </div>
-            <div className="h-10 w-px bg-[#333]" />
+            <div className="h-10 w-px bg-white/10" />
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-amber-400 mb-1">
-                <span className="text-2xl font-black">{formatPrice(totalPrice, locale)}</span>
+              <div className="mb-1 text-2xl font-black text-[var(--pastel-mint)] tabular-nums">
+                {formatPrice(totalPrice, locale)}
               </div>
-              <span className="text-[10px] text-[#666] uppercase tracking-wider">
-                {locale === "fa" ? "قیمت" : "Price"}
+              <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+                {locale === "fa" ? "قیمت نهایی" : "Total"}
               </span>
             </div>
           </div>
 
-          <div className="text-right space-y-2 mb-6">
+          <div className="mb-6 space-y-2 text-sm">
+            <div className="flex justify-between gap-3 text-[var(--color-text-muted)]">
+              <span>{locale === "fa" ? "هزینه پایه ساخت" : "Base assembly"}</span>
+              <span className="tabular-nums text-[var(--color-text)]">
+                {formatPrice(CUSTOM_BURGER_BASE_PRICE, locale)}
+              </span>
+            </div>
             {steps.map((s) => {
               const names = getSelectedNames(s.id);
-              if (names.length === 0) return null;
+              if (!names.length) return null;
               return (
-                <div key={s.id} className="flex items-start gap-2 text-sm">
-                  <span className="text-[#555] shrink-0 w-16">
-                    {locale === "fa" ? s.nameFa : s.nameEn}:
+                <div key={s.id} className="flex justify-between gap-3">
+                  <span className="text-[var(--color-text-muted)]">
+                    {locale === "fa" ? s.nameFa : s.nameEn}
                   </span>
-                  <span className="text-[#ccc]">{names.join(", ")}</span>
+                  <span className="text-right text-[var(--color-text)]">{names.join("، ")}</span>
                 </div>
               );
             })}
           </div>
 
           <div className="flex gap-3">
-            <Button
-              variant="secondary"
-              onClick={() => setIsComplete(false)}
-              className="flex-1"
-            >
+            <Button variant="secondary" onClick={() => setIsComplete(false)} className="flex-1">
               {locale === "fa" ? "ویرایش" : "Edit"}
             </Button>
             <Button
@@ -184,124 +202,125 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
   }
 
   return (
-    <div className={cn("max-w-lg mx-auto px-2 sm:px-0", className)}>
-      <div className="flex items-center gap-2 mb-6">
-        {steps.map((s, i) => (
-          <div
-            key={s.id}
-            className={cn(
-              "flex-1 h-1 rounded-full transition-colors",
-              i <= currentStep ? "bg-amber-400" : "bg-[#252525]"
-            )}
-          />
-        ))}
+    <div className={cn("mx-auto max-w-xl", className)}>
+      {/* Progress pills */}
+      <div className="mb-5 flex items-center gap-2">
+        {steps.map((s, i) => {
+          const done = (selections[s.id] || []).length > 0;
+          const active = i === currentStep;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setCurrentStep(i)}
+              className={cn(
+                "h-1.5 flex-1 rounded-full transition-all duration-300",
+                active
+                  ? "bg-gradient-to-r from-[var(--pastel-mint)] to-[var(--pastel-peach)]"
+                  : done
+                    ? "bg-[var(--pastel-mint)]/50"
+                    : "bg-white/10",
+              )}
+              aria-label={locale === "fa" ? s.nameFa : s.nameEn}
+            />
+          );
+        })}
       </div>
 
-      <div className="text-center mb-4">
-        <h3 className="text-lg font-bold text-[#faf5e4]">
-          {locale === "fa" ? step.nameFa : step.nameEn}
-        </h3>
-        <p className="text-xs text-[#666] mt-1">
-          {locale === "fa"
-            ? `مرحله ${currentStep + 1} از ${steps.length}${isMultiSelect ? " — چند انتخابی" : ""}`
-            : `Step ${currentStep + 1} of ${steps.length}${isMultiSelect ? " — multi-select" : ""}`
-          }
-        </p>
-      </div>
+      <BurgerVisual state={visualState} className="mb-5" />
 
-      {/* Burger visual preview */}
-      <div className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-4 mb-4">
-        <div className="flex items-center justify-center gap-0.5 sm:gap-1 py-3 overflow-x-auto">
-          {steps.map((s, i) => {
-            const selectedOpts = selections[s.id] || [];
-            const hasSelection = selectedOpts.length > 0;
-            return (
-              <div key={s.id} className="flex flex-col items-center gap-1 min-w-0">
-                <div
-                  className={cn(
-                    "w-10 sm:w-16 h-5 sm:h-6 rounded-t-full transition-colors",
-                    i === 0
-                      ? "bg-amber-600/40 rounded-t-full"
-                      : hasSelection
-                        ? "bg-amber-500/30"
-                        : "bg-[#252525]"
-                  )}
-                />
-                <span className="text-[8px] sm:text-[9px] text-[#555] truncate max-w-[40px] sm:max-w-none">
-                  {locale === "fa" ? s.nameFa : s.nameEn}
-                </span>
-              </div>
-            );
-          })}
+      <div className="mb-4 flex items-end justify-between gap-3 px-1">
+        <div>
+          <p className="text-xs text-[var(--color-text-muted)]">
+            {locale === "fa"
+              ? `مرحله ${currentStep + 1} از ${steps.length}`
+              : `Step ${currentStep + 1} of ${steps.length}`}
+          </p>
+          <h3 className="text-xl font-black text-[var(--color-text)]">
+            {locale === "fa" ? step.nameFa : step.nameEn}
+          </h3>
+        </div>
+        <div className="text-left text-xs text-[var(--color-text-muted)]">
+          <span className="block tabular-nums text-[var(--pastel-mint)]">
+            {formatPrice(totalPrice, locale)}
+          </span>
+          <span className="tabular-nums">
+            {totalCalories} {locale === "fa" ? "کالری" : "cal"}
+          </span>
         </div>
       </div>
+
+      <p className="mb-3 px-1 text-[11px] text-[var(--color-text-muted)]">
+        {locale === "fa"
+          ? `پایه ساخت: ${formatPrice(CUSTOM_BURGER_BASE_PRICE, locale)} + انتخاب‌ها`
+          : `Base ${formatPrice(CUSTOM_BURGER_BASE_PRICE, locale)} + selections`}
+        {isMultiSelect
+          ? locale === "fa"
+            ? " — می‌تونی چند تا انتخاب کنی"
+            : " — multi-select"
+          : ""}
+      </p>
 
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
-          initial={{ opacity: 0, x: locale === "fa" ? -20 : 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: locale === "fa" ? 20 : -20 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-2 mb-6"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.22 }}
+          className="mb-5 space-y-2.5"
         >
-          {step.options.map((opt) => {
-            const isSelected = (selections[step.id] || []).includes(opt.id);
-            return (
-              <motion.button
-                key={opt.id}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleSelect(step.id, opt.id)}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-xl p-3 sm:p-4 text-sm transition-all border",
-                  isSelected
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                    : "bg-[#141414] border-[#1e1e1e] text-[#ccc] hover:border-[#333]"
-                )}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className={cn(
-                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border-2 transition-all",
-                      isSelected ? "border-amber-400 bg-amber-400" : "border-[#444]"
-                    )}
-                  >
-                    {isSelected && <Check size={12} className="text-black" />}
-                  </div>
-                  <span className="truncate">{locale === "fa" ? opt.nameFa : opt.nameEn}</span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <span className="text-[11px] text-[#555] tabular-nums">{opt.calories} cal</span>
-                  {opt.price > 0 && (
-                    <span className="text-[11px] text-amber-400/70 tabular-nums">
-                      +{formatPrice(opt.price, locale)}
-                    </span>
+          {step.options
+            .filter((o) => o.available !== false)
+            .map((opt) => {
+              const isSelected = (selections[step.id] || []).includes(opt.id);
+              return (
+                <motion.button
+                  key={opt.id}
+                  type="button"
+                  whileTap={{ scale: 0.985 }}
+                  onClick={() => handleSelect(step.id, opt.id)}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-sm transition-all duration-300",
+                    isSelected ? "glass-pastel-mint" : "glass hover:border-white/20",
                   )}
-                </div>
-              </motion.button>
-            );
-          })}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all",
+                        isSelected
+                          ? "border-[var(--pastel-mint)] bg-[var(--pastel-mint)] text-[#0b0d10]"
+                          : "border-white/20",
+                      )}
+                    >
+                      {isSelected && <Check size={13} strokeWidth={3} />}
+                    </div>
+                    <span className="truncate font-semibold text-[var(--color-text)]">
+                      {locale === "fa" ? opt.nameFa : opt.nameEn}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-0.5">
+                    <span className="text-xs font-bold tabular-nums text-[var(--pastel-peach)]">
+                      {formatPrice(opt.price, locale)}
+                    </span>
+                    <span className="text-[10px] tabular-nums text-[var(--color-text-muted)]">
+                      {opt.calories} {locale === "fa" ? "کالری" : "cal"}
+                    </span>
+                  </div>
+                </motion.button>
+              );
+            })}
         </motion.div>
       </AnimatePresence>
-
-      {/* Total calories & price */}
-      <div className="flex items-center justify-between px-1 mb-6">
-        <div className="flex items-center gap-1.5 text-xs text-[#666]">
-          <Flame size={14} className="text-amber-500/60" />
-          <span className="tabular-nums">{totalCalories} {locale === "fa" ? "کالری" : "cal"}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold">
-          <span className="tabular-nums">{formatPrice(totalPrice, locale)}</span>
-        </div>
-      </div>
 
       {isLast && (
         <div className="mb-4">
           <input
             value={burgerName}
             onChange={(e) => setBurgerName(e.target.value)}
-            placeholder={locale === "fa" ? "به برگرت یه اسم بده..." : "Name your burger..."}
-            className="w-full rounded-xl bg-[#141414] border border-[#1e1e1e] px-4 py-3 text-sm text-[#ccc] placeholder-[#555] focus:outline-none focus:border-amber-500/40"
+            placeholder={locale === "fa" ? "اسم برگرت چی باشه؟" : "Name your burger"}
+            className="glass w-full rounded-2xl px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] outline-none focus:border-[var(--pastel-mint)]/40"
           />
         </div>
       )}
@@ -322,7 +341,7 @@ export function BurgerBuilder({ className, onComplete }: BurgerBuilderProps) {
         {isLast ? (
           <Button
             variant="primary"
-            onClick={handleComplete}
+            onClick={() => setIsComplete(true)}
             disabled={!canProceed}
             icon={<ShoppingBag size={16} />}
             className="flex-1"

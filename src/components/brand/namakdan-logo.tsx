@@ -16,24 +16,24 @@ export function NamakdanLogo({
   showWordmark = true,
   locale = "fa",
   className,
-  size = 36,
+  size = 40,
 }: NamakdanLogoProps) {
   const mark = (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/namakdan/logo.svg"
-        alt=""
+        alt={locale === "fa" ? "لوگوی نمکدان" : "Namakdan logo"}
         width={size}
         height={size}
-        className="rounded-lg shrink-0"
+        className="shrink-0 rounded-xl shadow-[0_8px_24px_rgba(168,230,207,0.18)]"
       />
       {showWordmark && (
         <span className="leading-tight">
-          <span className="block text-base font-black tracking-tight text-[#faf5e4]">
+          <span className="block text-base font-black tracking-tight text-[var(--color-text)]">
             {locale === "fa" ? "نمکدان" : "Namakdan"}
           </span>
-          <span className="block text-[10px] font-medium text-[#888] tracking-wide">
+          <span className="block text-[10px] font-medium tracking-wide text-[var(--pastel-mint)]">
             {locale === "fa" ? "Namakdan" : "نمکدان"}
           </span>
         </span>
@@ -44,7 +44,10 @@ export function NamakdanLogo({
   if (!href) return mark;
 
   return (
-    <Link href={href} className="inline-flex items-center hover:opacity-90 transition-opacity">
+    <Link
+      href={href}
+      className="inline-flex items-center transition-opacity hover:opacity-90"
+    >
       {mark}
     </Link>
   );

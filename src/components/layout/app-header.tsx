@@ -49,34 +49,28 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed top-0 right-0 left-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-[#0a0a0a]/85 backdrop-blur-xl border-b border-[#222]"
-          : "bg-[#0a0a0a]/60 backdrop-blur-sm",
-        className
+          ? "border-b border-white/10 bg-[#07090c]/75 backdrop-blur-2xl"
+          : "bg-transparent",
+        className,
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-        <NamakdanLogo
-          href={restaurantPath("", slug)}
-          locale={locale}
-          size={34}
-        />
+        <NamakdanLogo href={restaurantPath("", slug)} locale={locale} size={38} />
 
         <div className="flex items-center gap-2">
           {table && (
-            <span className="rounded-full bg-amber-500/15 border border-amber-500/20 px-3 py-1 text-xs font-bold text-amber-400">
+            <span className="glass-pastel-peach rounded-full px-3 py-1 text-xs font-bold text-[var(--pastel-peach)]">
               {locale === "fa" ? `میز ${toPersianDigits(table)}` : `Table ${table}`}
             </span>
           )}
 
           <button
             onClick={() =>
-              router.push(
-                pathForLocale(user ? "/account" : "/login", locale, slug),
-              )
+              router.push(pathForLocale(user ? "/account" : "/login", locale, slug))
             }
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            className="glass flex h-10 w-10 items-center justify-center rounded-2xl text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
             aria-label={locale === "fa" ? "حساب کاربری" : "Account"}
           >
             <User size={18} />
@@ -84,10 +78,10 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
 
           <button
             onClick={handleLocaleToggle}
-            className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#1e1e1e] border border-[#333] px-3 text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            className="glass flex h-10 items-center justify-center gap-1.5 rounded-2xl px-3 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
             aria-label={locale === "fa" ? "Switch to English" : "تغییر به فارسی"}
           >
-            <Globe size={16} />
+            <Globe size={15} />
             <span className="text-xs font-semibold">
               {locale === "fa" ? "English" : "فارسی"}
             </span>
@@ -95,7 +89,7 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
 
           <button
             onClick={onSearchOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            className="glass flex h-10 w-10 items-center justify-center rounded-2xl text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
             aria-label={locale === "fa" ? "جستجو" : "Search"}
           >
             <Search size={18} />
@@ -103,7 +97,7 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
 
           <button
             onClick={onCartOpen}
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            className="glass relative flex h-10 w-10 items-center justify-center rounded-2xl text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
             aria-label={locale === "fa" ? "سبد خرید" : "Cart"}
           >
             <ShoppingCart size={18} />
@@ -111,7 +105,7 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black"
+                className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--pastel-mint)] text-[10px] font-bold text-[#0b0d10]"
               >
                 {itemCount > 99 ? "99+" : itemCount}
               </motion.span>

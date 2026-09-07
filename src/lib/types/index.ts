@@ -518,16 +518,28 @@ export interface BurgerOption {
   id: string;
   nameFa: string;
   nameEn: string;
+  /** Addon price in Toman — always set so admin can edit later */
   price: number;
   calories: number;
+  /** Optional image URL (admin-managed later) */
+  image?: string | null;
+  available?: boolean;
+  sortOrder?: number;
 }
 
 export interface BurgerCategory {
   id: string;
   nameFa: string;
   nameEn: string;
+  /** single | multi — drives builder UX and future admin form */
+  selectionMode?: "single" | "multi";
+  required?: boolean;
+  maxSelect?: number;
   options: BurgerOption[];
 }
+
+/** Base assembly price for a custom burger before component addons */
+export const CUSTOM_BURGER_BASE_PRICE = 189_000;
 
 // ─── Helper Types ────────────────────────────────────────────────────────────
 

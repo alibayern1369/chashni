@@ -117,16 +117,16 @@ export default function MenuPage() {
           <button
             onClick={() => setFilterOpen(true)}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all border",
+              "flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-300",
               hasActiveFilters
-                ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
-                : "bg-[#141414] border-[#222] text-[#888] hover:border-[#333]"
+                ? "glass-pastel-mint text-[var(--pastel-mint)]"
+                : "glass text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
             )}
           >
             <SlidersHorizontal size={16} />
             {isRtl ? "فیلترها" : "Filters"}
             {hasActiveFilters && (
-              <span className="h-5 w-5 rounded-full bg-amber-500 text-black text-xs font-bold flex items-center justify-center">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--pastel-mint)] text-xs font-bold text-[#0b0d10]">
                 !
               </span>
             )}
