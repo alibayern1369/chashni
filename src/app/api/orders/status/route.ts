@@ -37,6 +37,10 @@ export async function POST(req: NextRequest) {
   const access = await requireTenantAccess(tenant, "kitchen");
   if ("error" in access) return access.error;
 
+  if (access.access.role === "kitchen" && !access.access.kitchenCanAdvance) {
+    return apiError("Kitchen view-only: cannot change order status", 403);
+  }
+
   const body = await parseBody<{
     orderId: string;
     status: DBOrderStatus;

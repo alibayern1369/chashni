@@ -172,6 +172,8 @@ export interface TenantMember {
   user_id: string;
   role: TenantMemberRole;
   is_active: boolean;
+  /** Kitchen-only: whether they can advance order status (vs view-only). */
+  kitchen_can_advance: boolean;
   created_at: string;
 }
 
@@ -213,6 +215,8 @@ export interface DBMenuItem {
   options: OptionGroup[];
   extras: Extra[];
   available: boolean;
+  /** NULL / undefined = unlimited; 0 = sold out */
+  stock_qty: number | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -441,6 +445,8 @@ export interface MenuItem {
   options: OptionGroup[];
   extras: Extra[];
   available: boolean;
+  /** null/undefined = unlimited */
+  stockQty?: number | null;
 }
 
 export interface CartItem {
@@ -601,6 +607,7 @@ export function dbMenuItemToUI(item: DBMenuItem, categorySlug: string): MenuItem
     options: item.options,
     extras: item.extras,
     available: item.available,
+    stockQty: item.stock_qty ?? null,
   };
 }
 
@@ -639,6 +646,7 @@ export function uiMenuItemToDB(
     options: item.options,
     extras: item.extras,
     available: item.available,
+    stock_qty: item.stockQty ?? null,
     sort_order: 0,
   };
 }

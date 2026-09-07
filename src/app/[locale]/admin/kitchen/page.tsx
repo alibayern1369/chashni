@@ -39,12 +39,24 @@ export default function KitchenDisplayPage() {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [canAdvance, setCanAdvance] = useState(true);
 
   const loadOrders = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/orders");
+      const [res, accessRes] = await Promise.all([
+        fetch("/api/admin/orders"),
+        fetch("/api/admin/access"),
+      ]);
+      if (accessRes.ok) {
+        const access = await accessRes.json();
+        if (access.role === "kitchen") {
+          setCanAdvance(access.kitchenCanAdvance !== false);
+        } else {
+          setCanAdvance(true);
+        }
+      }
       const data = await res.json();
       if (!res.ok) {
         setError(data?.error || "Failed to load orders");
@@ -188,13 +200,18 @@ export default function KitchenDisplayPage() {
                     {isRtl ? "مجموع" : "Total"}:{" "}
                     <span className="font-bold text-[#faf5e4]">{formatPrice(order.total, locale)}</span>
                   </span>
-                  {label && (
+                  {label && canAdvance && (
                     <button
                       onClick={() => advance(order.id, order.status)}
                       className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400"
                     >
                       {isRtl ? label.fa : label.en}
                     </button>
+                  )}
+                  {label && !canAdvance && (
+                    <span className="text-[11px] text-[#666]">
+                      {isRtl ? "فقط مشاهده" : "View only"}
+                    </span>
                   )}
                 </div>
               </div>

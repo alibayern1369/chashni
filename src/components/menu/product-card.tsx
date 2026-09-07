@@ -23,6 +23,10 @@ export function ProductCard({ item, onAddToCart, onOpenDetail, className }: Prod
 
   const name = locale === "fa" ? item.nameFa : item.nameEn;
   const desc = locale === "fa" ? item.descFa : item.descEn;
+  const soldOut =
+    !item.available || (item.stockQty != null && item.stockQty <= 0);
+  const lowStock =
+    item.stockQty != null && item.stockQty > 0 && item.stockQty < 5;
 
   return (
     <motion.article
@@ -72,6 +76,13 @@ export function ProductCard({ item, onAddToCart, onOpenDetail, className }: Prod
             </span>
           </div>
         )}
+        {soldOut && item.available && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <span className="text-sm font-semibold text-white">
+              {locale === "fa" ? "تمام شد" : "Sold out"}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-2.5 p-4">
@@ -81,6 +92,14 @@ export function ProductCard({ item, onAddToCart, onOpenDetail, className }: Prod
         <p className="line-clamp-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
           {desc}
         </p>
+
+        {lowStock && (
+          <p className="text-[11px] font-semibold text-[var(--pastel-rose)]">
+            {locale === "fa"
+              ? `تنها ${item.stockQty} عدد مانده`
+              : `Only ${item.stockQty} left`}
+          </p>
+        )}
 
         <div className="mt-auto flex items-center gap-2">
           <Rating rating={item.rating} reviewCount={item.reviewCount} size="sm" />
@@ -102,7 +121,7 @@ export function ProductCard({ item, onAddToCart, onOpenDetail, className }: Prod
         <div className="flex items-center justify-between border-t border-white/8 pt-3">
           <Price amount={item.basePrice} locale={locale} size="md" />
 
-          {item.available && (
+          {!soldOut && (
             <motion.button
               whileTap={{ scale: 0.88 }}
               onClick={(e: React.MouseEvent) => {

@@ -102,6 +102,10 @@ export function ProductSheet({ item, onClose, className }: ProductSheetProps) {
   const desc = locale === "fa" ? item.descFa : item.descEn;
   const ingredients = locale === "fa" ? item.ingredientsFa : item.ingredients;
   const allergens = locale === "fa" ? item.allergensFa : item.allergens;
+  const soldOut =
+    !item.available || (item.stockQty != null && item.stockQty <= 0);
+  const lowStock =
+    item.stockQty != null && item.stockQty > 0 && item.stockQty < 5;
 
   return (
     <AnimatePresence>
@@ -147,6 +151,18 @@ export function ProductSheet({ item, onClose, className }: ProductSheetProps) {
             <div className="px-5 pb-32">
               <h2 className="text-xl font-bold text-[#faf5e4] mt-1">{name}</h2>
               <p className="mt-2 text-sm text-[#888] leading-relaxed">{desc}</p>
+              {lowStock && (
+                <p className="mt-2 text-sm font-semibold text-rose-400">
+                  {locale === "fa"
+                    ? `تنها ${item.stockQty} عدد مانده`
+                    : `Only ${item.stockQty} left`}
+                </p>
+              )}
+              {soldOut && (
+                <p className="mt-2 text-sm font-semibold text-red-400">
+                  {locale === "fa" ? "موجودی تمام شده" : "Sold out"}
+                </p>
+              )}
 
               <div className="mt-3 flex items-center gap-4">
                 <Rating rating={item.rating} reviewCount={item.reviewCount} size="md" />
@@ -299,9 +315,14 @@ export function ProductSheet({ item, onClose, className }: ProductSheetProps) {
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleAddToCart}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-amber-500 to-orange-600 py-4 text-sm font-bold text-black shadow-lg shadow-amber-500/20"
+                  disabled={soldOut}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-amber-500 to-orange-600 py-4 text-sm font-bold text-black shadow-lg shadow-amber-500/20 disabled:opacity-40"
                 >
-                  {locale === "fa" ? "افزودن به سبد" : "Add to Cart"} — {formatPrice(calculatedPrice, locale)}
+                  {soldOut
+                    ? locale === "fa"
+                      ? "ناموجود"
+                      : "Unavailable"
+                    : `${locale === "fa" ? "افزودن به سبد" : "Add to Cart"} — ${formatPrice(calculatedPrice, locale)}`}
                 </motion.button>
               </div>
             </div>

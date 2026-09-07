@@ -40,6 +40,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     "sort_order",
     "options",
     "extras",
+    "stock_qty",
   ];
   for (const key of allowed) {
     if (body[key] !== undefined) updates[key] = body[key];

@@ -27,6 +27,10 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
+  const rest = pathname.includes("/r/")
+    ? pathname.replace(/^\/r\/[^/]+/, "") || "/"
+    : pathname.replace(/^\/(fa|en)/, "") || "/";
+  const isAdminRoute = rest === "/admin" || rest.startsWith("/admin/");
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -40,60 +44,54 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
   const activeTab = pathname.includes("/cart")
     ? "cart"
     : pathname.includes("/build-burger")
-    ? "build"
-    : pathname.includes("/favorites")
-    ? "favorites"
-    : pathname.includes("/menu")
-    ? "menu"
-    : "home";
+      ? "build"
+      : pathname.includes("/favorites")
+        ? "favorites"
+        : pathname.includes("/menu")
+          ? "menu"
+          : "home";
 
   return (
     <AuthProvider>
-    <DataProvider>
-    <LocaleProvider initialLocale={locale}>
-      <CartProvider>
-        <ToastProvider>
-          <AppHeader
-            onSearchOpen={() => setSearchOpen(true)}
-            onCartOpen={() => setCartOpen(true)}
-          />
+      <DataProvider>
+        <LocaleProvider initialLocale={locale}>
+          <CartProvider>
+            <ToastProvider>
+              {!isAdminRoute && (
+                <AppHeader
+                  onSearchOpen={() => setSearchOpen(true)}
+                  onCartOpen={() => setCartOpen(true)}
+                />
+              )}
 
-          <main className="flex-1 pt-16 pb-20 md:pb-0">
-            {children}
-          </main>
+              <main className={isAdminRoute ? "flex-1" : "flex-1 pt-16 pb-20 md:pb-0"}>
+                {children}
+              </main>
 
-          <MobileNav
-            activeTab={activeTab}
-            onTabChange={(tab) => {
-              const restByTab: Record<string, string> = {
-                home: "/",
-                menu: "/menu",
-                favorites: "/favorites",
-                cart: "/cart",
-              };
-              const rest = restByTab[tab] || "/";
-              router.push(pathForLocale(rest, locale, slug));
-            }}
-          />
-
-          <AppFooter
-            locale={locale}
-            onLocaleChange={handleLocaleChange}
-          />
-
-          <CartDrawer
-            isOpen={cartOpen}
-            onClose={() => setCartOpen(false)}
-          />
-
-          <SearchOverlay
-            isOpen={searchOpen}
-            onClose={() => setSearchOpen(false)}
-          />
-        </ToastProvider>
-      </CartProvider>
-    </LocaleProvider>
-    </DataProvider>
+              {!isAdminRoute && (
+                <>
+                  <MobileNav
+                    activeTab={activeTab}
+                    onTabChange={(tab) => {
+                      const restByTab: Record<string, string> = {
+                        home: "/",
+                        menu: "/menu",
+                        favorites: "/favorites",
+                        cart: "/cart",
+                      };
+                      const tabRest = restByTab[tab] || "/";
+                      router.push(pathForLocale(tabRest, locale, slug));
+                    }}
+                  />
+                  <AppFooter locale={locale} onLocaleChange={handleLocaleChange} />
+                  <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+                  <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+                </>
+              )}
+            </ToastProvider>
+          </CartProvider>
+        </LocaleProvider>
+      </DataProvider>
     </AuthProvider>
   );
 }

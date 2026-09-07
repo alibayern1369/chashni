@@ -1,276 +1,219 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import { Loader2, RefreshCw, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, usePathname } from "next/navigation";
+import { Loader2, Receipt, ChefHat, TrendingUp, AlertCircle } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
-import { useMenuContext } from "@/lib/providers/data-provider";
-import type { Locale, DBOrderStatus, OrderItemSnapshot } from "@/lib/types";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
+import type { Locale } from "@/lib/types";
 
-const STATUS_LABELS: Record<DBOrderStatus, { fa: string; en: string; color: string }> = {
-  received: { fa: "دریافت شد", en: "Received", color: "bg-blue-500/15 text-blue-400" },
-  confirmed: { fa: "تأیید شد", en: "Confirmed", color: "bg-sky-500/15 text-sky-400" },
-  preparing: { fa: "در حال آماده‌سازی", en: "Preparing", color: "bg-amber-500/15 text-amber-400" },
-  ready: { fa: "آماده تحویل", en: "Ready", color: "bg-emerald-500/15 text-emerald-400" },
-  served: { fa: "سرو شد", en: "Served", color: "bg-teal-500/15 text-teal-400" },
-  completed: { fa: "تکمیل شد", en: "Completed", color: "bg-[#222] text-[#666]" },
-  cancelled: { fa: "لغو شد", en: "Cancelled", color: "bg-red-500/15 text-red-400" },
+type Stats = {
+  summary: {
+    orderCount: number;
+    activeCount: number;
+    completed: number;
+    cancelled: number;
+    sales: number;
+    paidSales: number;
+    avgTicket: number;
+  };
+  byStatus: Record<string, number>;
+  topItems: { name: string; qty: number; revenue: number }[];
 };
 
-const NEXT_STATUS: Record<DBOrderStatus, DBOrderStatus | null> = {
-  received: "confirmed",
-  confirmed: "preparing",
-  preparing: "ready",
-  ready: "served",
-  served: "completed",
-  completed: null,
-  cancelled: null,
+const STATUS_FA: Record<string, string> = {
+  received: "دریافت",
+  confirmed: "تأیید",
+  preparing: "آماده‌سازی",
+  ready: "آماده",
+  served: "سرو",
+  completed: "تکمیل",
+  cancelled: "لغو",
 };
 
-const CANCELLABLE: DBOrderStatus[] = ["received", "confirmed", "preparing", "ready"];
-
-const PAYMENT_LABELS: Record<string, { fa: string; en: string; color: string }> = {
-  unpaid: { fa: "پرداخت‌نشده", en: "Unpaid", color: "text-[#888]" },
-  pending: { fa: "در انتظار پرداخت", en: "Pending", color: "text-amber-400" },
-  paid: { fa: "پرداخت‌شده", en: "Paid", color: "text-emerald-400" },
-  failed: { fa: "ناموفق", en: "Failed", color: "text-red-400" },
-  refunded: { fa: "بازگشت وجه", en: "Refunded", color: "text-sky-400" },
-};
-
-interface AdminOrder {
-  id: string;
-  order_number: number;
-  status: DBOrderStatus;
-  order_type: string;
-  items: OrderItemSnapshot[];
-  total: number;
-  customer_name: string | null;
-  table_id: string | null;
-  payment_status?: string;
-  payment_method?: string | null;
-  notes?: string | null;
-  created_at: string;
-  table?: { id: string; number: number; name: string | null } | null;
-}
-
-export default function AdminOrdersPage() {
+export default function AdminHomePage() {
   const params = useParams();
+  const pathname = usePathname();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
-  const { menuItems } = useMenuContext();
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
 
-  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<DBOrderStatus | "all">("all");
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
 
-  const loadOrders = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+  const load = useCallback(async () => {
+    setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/orders");
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data?.error || "Failed to load orders");
+      const [statsRes, accessRes] = await Promise.all([
+        fetch("/api/admin/stats?range=today"),
+        fetch("/api/admin/access"),
+      ]);
+      if (accessRes.ok) {
+        const a = await accessRes.json();
+        setRole(a.role);
+        if (a.role === "kitchen") {
+          // Kitchen lands on kitchen page via shell guard; still show minimal
+        }
+      }
+      const data = await statsRes.json();
+      if (!statsRes.ok) {
+        setError(data?.error || "Failed");
         return;
       }
-      setOrders(data.orders ?? []);
+      setStats(data);
     } catch (e) {
       setError(String(e));
     } finally {
-      if (!silent) setLoading(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadOrders();
-    const t = setInterval(() => loadOrders(true), 15000);
-    return () => clearInterval(t);
-  }, [loadOrders]);
+    load();
+  }, [load]);
 
-  const setStatus = async (orderId: string, status: DBOrderStatus) => {
-    setBusyId(orderId);
-    try {
-      const res = await fetch("/api/orders/status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, status }),
-      });
-      if (res.ok) {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
-        );
-      } else {
-        const data = await res.json();
-        setError(data?.error || "Status update failed");
-      }
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const statusCount = (s: DBOrderStatus) =>
-    orders.filter((o) => o.status === s).length;
-
-  const summaryStatuses: DBOrderStatus[] = [
-    "received",
-    "confirmed",
-    "preparing",
-    "ready",
-    "served",
-    "completed",
-  ];
-
-  const visible =
-    filter === "all" ? orders : orders.filter((o) => o.status === filter);
-
-  if (loading && orders.length === 0) {
+  if (loading && !stats) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-amber-400" />
+      <div className="flex justify-center py-20">
+        <Loader2 className="animate-spin text-amber-400" />
       </div>
     );
   }
 
+  if (error && !stats) {
+    return (
+      <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        {error}
+      </div>
+    );
+  }
+
+  const s = stats!.summary;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-[#faf5e4]">
-          {isRtl ? "سفارش‌ها" : "Orders"}
-        </h2>
-        <button
-          onClick={() => loadOrders()}
-          className="flex items-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-3 py-2 text-xs text-[#ccc] hover:border-[#444]"
-        >
-          <RefreshCw size={14} className={cn(loading && "animate-spin")} />
-          {isRtl ? "به‌روزرسانی" : "Refresh"}
-        </button>
+      <div>
+        <h1 className="text-2xl font-black text-[#faf5e4]">
+          {isRtl ? "خانه" : "Home"}
+        </h1>
+        <p className="mt-1 text-sm text-[#888]">
+          {isRtl ? "خلاصه وضعیت امروز رستوران" : "Today’s restaurant overview"}
+        </p>
       </div>
 
-      {error && (
-        <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {summaryStatuses.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setFilter((prev) => (prev === s ? "all" : s))}
-            className={cn(
-              "rounded-2xl bg-[#141414] border p-4 text-center transition-colors",
-              filter === s ? "border-amber-500/50" : "border-[#1e1e1e] hover:border-[#333]",
-            )}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          {
+            label: isRtl ? "سفارش فعال" : "Active orders",
+            value: String(s.activeCount),
+            icon: <AlertCircle size={16} className="text-amber-400" />,
+          },
+          {
+            label: isRtl ? "فروش امروز" : "Sales today",
+            value: formatPrice(s.sales, locale),
+            icon: <TrendingUp size={16} className="text-emerald-400" />,
+          },
+          {
+            label: isRtl ? "تکمیل‌شده" : "Completed",
+            value: String(s.completed),
+            icon: <Receipt size={16} className="text-sky-400" />,
+          },
+          {
+            label: isRtl ? "میانگین فاکتور" : "Avg ticket",
+            value: formatPrice(s.avgTicket, locale),
+            icon: <TrendingUp size={16} className="text-[#888]" />,
+          },
+        ].map((c) => (
+          <div
+            key={c.label}
+            className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-4"
           >
-            <p className="text-3xl font-black text-[#faf5e4]">{statusCount(s)}</p>
-            <p className={cn("mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold", STATUS_LABELS[s].color)}>
-              {isRtl ? STATUS_LABELS[s].fa : STATUS_LABELS[s].en}
-            </p>
-          </button>
+            <div className="mb-2 flex items-center gap-2 text-[11px] text-[#666]">
+              {c.icon}
+              {c.label}
+            </div>
+            <p className="text-xl font-black text-[#faf5e4]">{c.value}</p>
+          </div>
         ))}
       </div>
 
-      {visible.length === 0 ? (
-        <div className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-10 text-center text-sm text-[#888]">
-          {isRtl ? "سفارشی برای نمایش نیست" : "No orders to show"}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {visible.map((order) => {
-            const label = STATUS_LABELS[order.status] ?? STATUS_LABELS.received;
-            const next = NEXT_STATUS[order.status];
-            const pay = PAYMENT_LABELS[order.payment_status || "unpaid"] ?? PAYMENT_LABELS.unpaid;
-            const canCancel = CANCELLABLE.includes(order.status);
-            return (
-              <div key={order.id} className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-[#faf5e4]">
-                      #{order.order_number}
-                      {order.customer_name ? ` — ${order.customer_name}` : ""}
-                      {order.table
-                        ? ` · ${isRtl ? "میز" : "Table"} ${order.table.number}`
-                        : ""}
-                    </p>
-                    <p className="text-xs text-[#666] mt-0.5">
-                      {new Date(order.created_at).toLocaleString(isRtl ? "fa-IR" : "en-US")}
-                      {" · "}
-                      <span className={pay.color}>
-                        {isRtl ? pay.fa : pay.en}
-                      </span>
-                    </p>
-                  </div>
-                  <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", label.color)}>
-                    {isRtl ? label.fa : label.en}
-                  </span>
-                </div>
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href={restaurantPath("/admin/orders", slug)}
+          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-black hover:bg-amber-400"
+        >
+          <Receipt size={16} />
+          {isRtl ? "سفارش‌ها" : "Orders"}
+        </Link>
+        <Link
+          href={restaurantPath("/admin/kitchen", slug)}
+          className="flex items-center gap-2 rounded-xl border border-[#333] bg-[#1e1e1e] px-4 py-2.5 text-sm font-medium text-[#ccc] hover:border-amber-500/40"
+        >
+          <ChefHat size={16} />
+          {isRtl ? "آشپزخانه" : "Kitchen"}
+        </Link>
+        {role !== "kitchen" && (
+          <Link
+            href={restaurantPath("/admin/reports", slug)}
+            className="flex items-center gap-2 rounded-xl border border-[#333] bg-[#1e1e1e] px-4 py-2.5 text-sm font-medium text-[#ccc] hover:border-amber-500/40"
+          >
+            <TrendingUp size={16} />
+            {isRtl ? "گزارش‌ها" : "Reports"}
+          </Link>
+        )}
+      </div>
 
-                <div className="mt-3 space-y-1 text-sm text-[#888]">
-                  {order.items.map((item: OrderItemSnapshot, i) => {
-                    const mi = menuItems.find((m) => m.id === item.menuItemId);
-                    const itemName = mi
-                      ? isRtl ? mi.nameFa : mi.nameEn
-                      : item.name || item.menuItemId;
-                    return (
-                      <div key={i} className="flex justify-between">
-                        <span>{item.quantity}x {itemName}</span>
-                        <span className="tabular-nums">{formatPrice(item.totalPrice, locale)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {order.notes && (
-                  <p className="mt-2 text-[11px] italic text-amber-400/80">
-                    {order.notes}
-                  </p>
-                )}
-
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#1e1e1e] pt-3">
-                  <span className="text-sm font-bold text-[#faf5e4]">
-                    {isRtl ? "مجموع" : "Total"}:{" "}
-                    <span className="text-amber-400">{formatPrice(order.total, locale)}</span>
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {canCancel && (
-                      <button
-                        disabled={busyId === order.id}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              isRtl ? "لغو این سفارش؟" : "Cancel this order?",
-                            )
-                          ) {
-                            setStatus(order.id, "cancelled");
-                          }
-                        }}
-                        className="flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/20 disabled:opacity-50"
-                      >
-                        <X size={12} />
-                        {isRtl ? "لغو" : "Cancel"}
-                      </button>
-                    )}
-                    {next && (
-                      <button
-                        disabled={busyId === order.id}
-                        onClick={() => setStatus(order.id, next)}
-                        className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400 transition-colors disabled:opacity-50"
-                      >
-                        {isRtl
-                          ? `انتقال به: ${STATUS_LABELS[next].fa}`
-                          : `Move to ${STATUS_LABELS[next].en}`}
-                      </button>
-                    )}
-                  </div>
-                </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-5">
+          <h2 className="mb-3 text-sm font-bold text-[#ccc]">
+            {isRtl ? "وضعیت سفارش‌ها" : "Orders by status"}
+          </h2>
+          <div className="space-y-2">
+            {Object.entries(stats!.byStatus).map(([st, n]) => (
+              <div key={st} className="flex items-center justify-between text-sm">
+                <span className="text-[#888]">
+                  {isRtl ? STATUS_FA[st] || st : st}
+                </span>
+                <span className="font-bold text-[#faf5e4]">{n}</span>
               </div>
-            );
-          })}
+            ))}
+            {Object.keys(stats!.byStatus).length === 0 && (
+              <p className="text-sm text-[#666]">
+                {isRtl ? "سفارشی امروز ثبت نشده" : "No orders today"}
+              </p>
+            )}
+          </div>
         </div>
-      )}
+
+        <div className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-5">
+          <h2 className="mb-3 text-sm font-bold text-[#ccc]">
+            {isRtl ? "پرفروش‌های امروز" : "Top items today"}
+          </h2>
+          <div className="space-y-2">
+            {stats!.topItems.map((it) => (
+              <div key={it.name} className="flex items-center justify-between text-sm">
+                <span className="truncate text-[#888]">{it.name}</span>
+                <span className={cn("shrink-0 font-bold text-amber-400")}>
+                  ×{it.qty}
+                </span>
+              </div>
+            ))}
+            {stats!.topItems.length === 0 && (
+              <p className="text-sm text-[#666]">
+                {isRtl ? "داده‌ای نیست" : "No data"}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

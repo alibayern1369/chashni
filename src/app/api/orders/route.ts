@@ -154,6 +154,12 @@ export async function POST(req: NextRequest) {
       }
 
       if (dbItem) {
+        if (dbItem.stock_qty != null && dbItem.stock_qty < (item.quantity || 1)) {
+          return apiError(
+            `Insufficient stock for ${dbItem.name_en || dbItem.name_fa}`,
+            400,
+          );
+        }
         unitPrice = dbItem.base_price;
         nameFa = dbItem.name_fa;
         nameEn = dbItem.name_en;
@@ -308,6 +314,31 @@ export async function POST(req: NextRequest) {
       );
     }
     return apiError(msg, 500);
+  }
+
+  // Best-effort stock decrement for tracked items
+  try {
+    const stockWriter = useServiceRole ? createServiceClient() : writer;
+    for (const item of body.items) {
+      if (item.menuItemId === "custom-burger" || item.customBurger) continue;
+      let dbItem = dbItemMap.get(item.menuItemId);
+      if (!dbItem) {
+        const staticItem = staticMenuItems.find((m) => m.id === item.menuItemId);
+        if (staticItem) dbItem = dbItemBySlug.get(staticItem.slug);
+      }
+      if (!dbItem || dbItem.stock_qty == null) continue;
+      const next = Math.max(0, Number(dbItem.stock_qty) - (item.quantity || 1));
+      await stockWriter
+        .from("menu_items")
+        .update({
+          stock_qty: next,
+          available: next > 0 ? dbItem.available : false,
+        })
+        .eq("id", dbItem.id)
+        .eq("tenant_id", tenant.id);
+    }
+  } catch {
+    /* ignore stock errors — order already placed */
   }
 
   if (loyaltyPoints > 0 && user && useServiceRole) {

@@ -7,6 +7,7 @@ export type AdminAccess = {
   userId: string;
   role: TenantMemberRole | "super_admin";
   isSuperAdmin: boolean;
+  kitchenCanAdvance: boolean;
 };
 
 export type AdminScope = "read" | "write" | "kitchen" | "manage";
@@ -17,11 +18,6 @@ const KITCHEN_ROLES: TenantMemberRole[] = ["owner", "admin", "staff", "kitchen"]
 
 /**
  * Require an authenticated tenant member (or super_admin).
- * @param scope
- *  - read: any active member
- *  - write: owner/admin/staff (menu, tables, CMS, media…)
- *  - kitchen: write roles + kitchen (order status)
- *  - manage: owner/admin only (tenant profile / branding)
  */
 export async function requireTenantAccess(
   tenant: Tenant | null,
@@ -44,13 +40,18 @@ export async function requireTenantAccess(
 
   if (profile?.role === "super_admin") {
     return {
-      access: { userId: user.id, role: "super_admin", isSuperAdmin: true },
+      access: {
+        userId: user.id,
+        role: "super_admin",
+        isSuperAdmin: true,
+        kitchenCanAdvance: true,
+      },
     };
   }
 
   const { data: member } = await supabase
     .from("tenant_members")
-    .select("role")
+    .select("role, kitchen_can_advance")
     .eq("tenant_id", tenant.id)
     .eq("user_id", user.id)
     .eq("is_active", true)
@@ -61,6 +62,7 @@ export async function requireTenantAccess(
   }
 
   const role = member.role as TenantMemberRole;
+  const kitchenCanAdvance = member.kitchen_can_advance !== false;
 
   if (scope === "write" && !ADMIN_WRITE_ROLES.includes(role)) {
     return { error: apiError("Insufficient permissions", 403) };
@@ -75,7 +77,7 @@ export async function requireTenantAccess(
   }
 
   return {
-    access: { userId: user.id, role, isSuperAdmin: false },
+    access: { userId: user.id, role, isSuperAdmin: false, kitchenCanAdvance },
   };
 }
 
@@ -102,5 +104,8 @@ export async function checkAdminAccessApi(): Promise<Response> {
     ok: true,
     role: result.access.role,
     isSuperAdmin: result.access.isSuperAdmin,
+    kitchenCanAdvance: result.access.kitchenCanAdvance,
+    tenantNameFa: (tenant as Tenant)?.name_fa ?? null,
+    tenantNameEn: (tenant as Tenant)?.name_en ?? null,
   });
 }

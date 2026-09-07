@@ -45,14 +45,17 @@
 
 | نقش | آدرس |
 |-----|------|
-| سفارش‌ها | `/r/namakdan/admin` |
-| منو | `/r/namakdan/admin/menu` |
+| سفارش‌ها | `/r/namakdan/admin/orders` |
+| خانه / داشبورد | `/r/namakdan/admin` |
 | آشپزخانه | `/r/namakdan/admin/kitchen` |
+| منو | `/r/namakdan/admin/menu` |
 | میز و QR | `/r/namakdan/admin/tables` |
 | لندینگ CMS رستوران | `/r/namakdan/admin/pages` |
 | تخفیف‌ها | `/r/namakdan/admin/promotions` |
 | تصاویر | `/r/namakdan/admin/media` |
 | رزرو | `/r/namakdan/admin/reservations` |
+| گزارش‌ها | `/r/namakdan/admin/reports` |
+| کاربران پنل | `/r/namakdan/admin/staff` |
 | تنظیمات | `/r/namakdan/admin/settings` |
 
 ---
@@ -96,3 +99,4 @@ NEXT_PUBLIC_BASE_URL=https://chashni-seven.vercel.app
 6. `006_orders_insert_policy.sql`
 7. `007_admin_panel_hardening.sql`
 8. `008_rename_tenant_slug_namakdan.sql`
+9. `009_menu_stock_kitchen_perms.sql`

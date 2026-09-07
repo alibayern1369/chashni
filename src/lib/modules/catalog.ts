@@ -27,8 +27,9 @@ export const DEFAULT_ENABLED_MODULES: CatalogModuleId[] = MODULE_CATALOG.filter(
 
 /** Admin nav path → required module (undefined = always show if member) */
 export const ADMIN_NAV_MODULES: Record<string, CatalogModuleId | undefined> = {
+  "/admin": undefined,
   "/admin/menu": "menu",
-  "/admin": "orders",
+  "/admin/orders": "orders",
   "/admin/kitchen": "orders",
   "/admin/tables": "tables",
   "/admin/pages": "cms",
@@ -36,4 +37,6 @@ export const ADMIN_NAV_MODULES: Record<string, CatalogModuleId | undefined> = {
   "/admin/media": "menu",
   "/admin/settings": undefined,
   "/admin/reservations": "reservations",
+  "/admin/reports": "orders",
+  "/admin/staff": undefined,
 };

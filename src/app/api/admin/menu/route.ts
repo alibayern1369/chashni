@@ -26,6 +26,7 @@ interface MenuItemInput {
   extras?: unknown[];
   available?: boolean;
   sort_order?: number;
+  stock_qty?: number | null;
 }
 
 function toDBInput(body: MenuItemInput, tenantId: string) {
@@ -62,6 +63,7 @@ function toDBInput(body: MenuItemInput, tenantId: string) {
     extras: Array.isArray(body.extras) ? body.extras : [],
     available: body.available ?? true,
     sort_order: body.sort_order ?? 0,
+    stock_qty: body.stock_qty === undefined ? null : body.stock_qty,
   };
 }
 
