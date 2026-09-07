@@ -1,13 +1,19 @@
 {
-  "name": "CHASHNI — چاشنی",
-  "short_name": "CHASHNI",
-  "description": "Premium QR Restaurant Experience",
-  "start_url": "/fa",
+  "name": "نمکدان — Namakdan",
+  "short_name": "نمکدان",
+  "description": "منوی دیجیتال رستوران نمکدان",
+  "start_url": "/r/chashni/menu",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
   "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/namakdan/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",

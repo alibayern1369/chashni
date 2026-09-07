@@ -36,13 +36,13 @@ export const burgerOptions: BurgerCategory[] = [
   },
   {
     id: "toppings",
-    nameFa: "تاسینگ",
+    nameFa: "مخلفات",
     nameEn: "Toppings",
     options: [
       { id: "top-lettuce", nameFa: "کاهو", nameEn: "Lettuce", price: 0, calories: 5 },
       { id: "top-tomato", nameFa: "گوجه", nameEn: "Tomato", price: 0, calories: 10 },
       { id: "top-pickles", nameFa: "خیارشور", nameEn: "Pickles", price: 0, calories: 5 },
-      { id: "top-jalapeno", nameFa: "jalapeño", nameEn: "Jalapeño", price: 8000, calories: 5 },
+      { id: "top-jalapeno", nameFa: "هالاپینو", nameEn: "Jalapeño", price: 8000, calories: 5 },
       { id: "top-caramelized-onion", nameFa: "پیاز کاراملی", nameEn: "Caramelized Onion", price: 15000, calories: 30 },
       { id: "top-mushroom", nameFa: "قارچ", nameEn: "Mushroom", price: 18000, calories: 15 },
       { id: "top-bacon", nameFa: "بیکن", nameEn: "Bacon-style", price: 28000, calories: 80 },
@@ -54,7 +54,7 @@ export const burgerOptions: BurgerCategory[] = [
     nameFa: "سس",
     nameEn: "Sauce",
     options: [
-      { id: "sauce-chashni", nameFa: "سس مخصوص چاشنی", nameEn: "CHASHNI Special", price: 0, calories: 60 },
+      { id: "sauce-chashni", nameFa: "سس مخصوص نمکدان", nameEn: "Namakdan Special", price: 0, calories: 60 },
       { id: "sauce-ketchup", nameFa: "کچاپ", nameEn: "Ketchup", price: 0, calories: 20 },
       { id: "sauce-mustard", nameFa: "سس خردل", nameEn: "Mustard", price: 0, calories: 10 },
       { id: "sauce-mayo", nameFa: "مایونز", nameEn: "Mayo", price: 0, calories: 90 },

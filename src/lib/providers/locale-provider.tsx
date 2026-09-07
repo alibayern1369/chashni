@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import type { Locale } from "@/lib/types";
 
 interface LocaleContextValue {
@@ -17,8 +17,18 @@ export function useLocaleContext() {
   return useContext(LocaleContext);
 }
 
-export function LocaleProvider({ children, initialLocale = "fa" }: { children: ReactNode; initialLocale?: Locale }) {
+export function LocaleProvider({
+  children,
+  initialLocale = "fa",
+}: {
+  children: ReactNode;
+  initialLocale?: Locale;
+}) {
   const [locale, setLocale] = useState<Locale>(initialLocale);
+
+  useEffect(() => {
+    setLocale(initialLocale);
+  }, [initialLocale]);
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>

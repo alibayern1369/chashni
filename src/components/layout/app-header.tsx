@@ -9,8 +9,10 @@ import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { useTable } from "@/lib/hooks";
 import { cn, toPersianDigits } from "@/lib/utils";
+import { NamakdanLogo } from "@/components/brand/namakdan-logo";
 import {
   DEFAULT_TENANT_SLUG,
+  pathForLocale,
   restaurantPath,
   tenantSlugFromPathname,
 } from "@/lib/routes";
@@ -35,13 +37,7 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
     const target = locale === "fa" ? "en" : "fa";
     setLocale(target);
     const search = table ? `?table=${table}` : "";
-    if (target === "fa") {
-      const rest = pathname.replace(/^\/r\/[^/]+/, "") || "/menu";
-      router.push(`${restaurantPath(rest, slug)}${search}`);
-    } else {
-      const rest = pathname.replace(/^\/r\/[^/]+/, "") || "/menu";
-      router.push(`/en${rest}${search}`);
-    }
+    router.push(`${pathForLocale(pathname, target, slug)}${search}`);
   };
 
   useEffect(() => {
@@ -61,11 +57,11 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-black tracking-tight text-[#faf5e4]">
-            CHASHNI
-          </h1>
-        </div>
+        <NamakdanLogo
+          href={restaurantPath("", slug)}
+          locale={locale}
+          size={34}
+        />
 
         <div className="flex items-center gap-2">
           {table && (
@@ -77,24 +73,30 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
           <button
             onClick={() =>
               router.push(
-                user ? restaurantPath("/account", slug) : restaurantPath("/login", slug),
+                pathForLocale(user ? "/account" : "/login", locale, slug),
               )
             }
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            aria-label={locale === "fa" ? "حساب کاربری" : "Account"}
           >
             <User size={18} />
           </button>
 
           <button
             onClick={handleLocaleToggle}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#1e1e1e] border border-[#333] px-3 text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            aria-label={locale === "fa" ? "Switch to English" : "تغییر به فارسی"}
           >
-            <Globe size={18} />
+            <Globe size={16} />
+            <span className="text-xs font-semibold">
+              {locale === "fa" ? "English" : "فارسی"}
+            </span>
           </button>
 
           <button
             onClick={onSearchOpen}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            aria-label={locale === "fa" ? "جستجو" : "Search"}
           >
             <Search size={18} />
           </button>
@@ -102,6 +104,7 @@ export function AppHeader({ onSearchOpen, onCartOpen, className }: AppHeaderProp
           <button
             onClick={onCartOpen}
             className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e1e1e] border border-[#333] text-[#999] hover:text-[#e8dcc8] hover:border-[#444] transition-colors"
+            aria-label={locale === "fa" ? "سبد خرید" : "Cart"}
           >
             <ShoppingCart size={18} />
             {itemCount > 0 && (

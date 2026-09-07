@@ -1,8 +1,16 @@
 "use client";
 
 import { Globe } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useMenuContext } from "@/lib/providers/data-provider";
+import { NamakdanLogo } from "@/components/brand/namakdan-logo";
+import { SocialIconLinks } from "@/components/brand/social-icons";
 import { cn } from "@/lib/utils";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 import type { Locale } from "@/lib/types";
 
 interface AppFooterProps {
@@ -11,23 +19,29 @@ interface AppFooterProps {
   className?: string;
 }
 
-const navLinks = [
-  { href: "/#menu", labelFa: "منو", labelEn: "Menu" },
-  { href: "/#build-burger", labelFa: "برگر بساز", labelEn: "Build Burger" },
-  { href: "/#favorites", labelFa: "علاقه‌مندی‌ها", labelEn: "Favorites" },
-];
-
 export function AppFooter({ locale = "fa", onLocaleChange, className }: AppFooterProps) {
-  const { restaurant } = useMenuContext();
+  const { restaurant, social } = useMenuContext();
+  const pathname = usePathname();
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
+
+  const navLinks = [
+    { href: restaurantPath("/menu", slug), labelFa: "منو", labelEn: "Menu" },
+    { href: restaurantPath("/build-burger", slug), labelFa: "برگر بساز", labelEn: "Build Burger" },
+    { href: restaurantPath("/favorites", slug), labelFa: "علاقه‌مندی‌ها", labelEn: "Favorites" },
+  ];
+
   return (
     <footer className={cn("bg-[#0a0a0a] border-t border-[#1e1e1e]", className)}>
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
-            <h2 className="text-xl font-black text-[#faf5e4] tracking-tight mb-2">
-              CHASHNI
-            </h2>
-            <p className="text-sm text-[#888]">
+            <NamakdanLogo
+              href={restaurantPath("", slug)}
+              locale={locale}
+              size={40}
+              className="mb-3"
+            />
+            <p className="text-sm text-[#888] mt-3">
               {locale === "fa" ? restaurant.sloganFa : restaurant.sloganEn}
             </p>
           </div>
@@ -58,26 +72,20 @@ export function AppFooter({ locale = "fa", onLocaleChange, className }: AppFoote
               {restaurant.hours.open} – {restaurant.hours.close}
             </p>
 
-            <div className="mt-4 flex gap-3">
-              <a
-                href="#"
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1e1e1e] border border-[#333] text-[#888] hover:text-amber-400 hover:border-amber-500/30 transition-colors text-xs font-bold"
-              >
-                IG
-              </a>
-              <a
-                href="#"
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1e1e1e] border border-[#333] text-[#888] hover:text-amber-400 hover:border-amber-500/30 transition-colors text-xs font-bold"
-              >
-                TG
-              </a>
+            <div className="mt-4">
+              <p className="text-xs text-[#666] mb-2">
+                {locale === "fa" ? "شبکه‌های اجتماعی" : "Social"}
+              </p>
+              <SocialIconLinks links={social} />
             </div>
           </div>
         </div>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#1e1e1e] pt-6">
           <p className="text-xs text-[#555]">
-            &copy; {new Date().getFullYear()} CHASHNI. {locale === "fa" ? "تمامی حقوق محفوظ است" : "All rights reserved"}
+            &copy; {new Date().getFullYear()}{" "}
+            {locale === "fa" ? "نمکدان" : "Namakdan"}.{" "}
+            {locale === "fa" ? "تمامی حقوق محفوظ است" : "All rights reserved"}
           </p>
 
           {onLocaleChange && (

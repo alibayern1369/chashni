@@ -14,7 +14,7 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SearchOverlay } from "@/components/search/search-overlay";
 import {
   DEFAULT_TENANT_SLUG,
-  restaurantPath,
+  pathForLocale,
   tenantSlugFromPathname,
 } from "@/lib/routes";
 import type { Locale } from "@/lib/types";
@@ -34,14 +34,7 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
   }, [locale]);
 
   const handleLocaleChange = (target: Locale) => {
-    if (target === "fa") {
-      const rest = pathname.replace(/^\/r\/[^/]+/, "") || "";
-      router.push(restaurantPath(rest || "", slug));
-      return;
-    }
-    // English keeps legacy /en paths for now
-    const rest = pathname.replace(/^\/r\/[^/]+/, "") || "/menu";
-    router.push(`/en${rest}`);
+    router.push(pathForLocale(pathname, target, slug));
   };
 
   const activeTab = pathname.includes("/cart")
@@ -72,14 +65,15 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
           <MobileNav
             activeTab={activeTab}
             onTabChange={(tab) => {
-              const routes: Record<string, string> = {
-                home: restaurantPath("", slug),
-                menu: restaurantPath("/menu", slug),
-                build: restaurantPath("/build-burger", slug),
-                favorites: restaurantPath("/favorites", slug),
-                cart: restaurantPath("/cart", slug),
+              const restByTab: Record<string, string> = {
+                home: "/",
+                menu: "/menu",
+                build: "/build-burger",
+                favorites: "/favorites",
+                cart: "/cart",
               };
-              router.push(routes[tab] || restaurantPath("", slug));
+              const rest = restByTab[tab] || "/";
+              router.push(pathForLocale(rest, locale, slug));
             }}
           />
 
@@ -93,7 +87,7 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
             onClose={() => setCartOpen(false)}
             onCheckout={() => {
               setCartOpen(false);
-              router.push(restaurantPath("/checkout", slug));
+              router.push(pathForLocale("/checkout", locale, slug));
             }}
           />
 

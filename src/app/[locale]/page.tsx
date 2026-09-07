@@ -1,32 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Utensils, Sparkles, Clock, MapPin, Phone } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { RestaurantStatus } from "@/components/restaurant/restaurant-status";
 import { useMenuContext } from "@/lib/providers/data-provider";
 import { CmsBlocks } from "@/components/cms/cms-blocks";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 import type { Locale, PageBlock } from "@/lib/types";
 
 export default function HomePage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
   const { categories, menuItems, restaurant } = useMenuContext();
   const [cmsBlocks, setCmsBlocks] = useState<PageBlock[] | null>(null);
   const [cmsChecked, setCmsChecked] = useState(false);
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
 
   const table = searchParams.get("table");
 
   useEffect(() => {
     if (table) {
-      router.replace(`/${locale}/menu?table=${table}`);
+      router.replace(`${restaurantPath("/menu", slug)}?table=${table}`);
     }
-  }, [table, locale, router]);
+  }, [table, locale, router, slug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,30 +93,37 @@ export default function HomePage() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, type: "spring" }}
-            className="text-5xl mb-6"
+            className="mb-6 flex justify-center"
           >
-            ✨
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/namakdan/logo.svg"
+              alt=""
+              width={88}
+              height={88}
+              className="rounded-2xl"
+            />
           </motion.div>
 
           <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-3">
-            <span className="text-[#faf5e4]">CHASHNI</span>
+            <span className="text-[#faf5e4]">{isRtl ? "نمکدان" : "Namakdan"}</span>
           </h1>
-          <p className="text-2xl md:text-3xl font-bold text-amber-400 mb-4" style={{ fontFamily: "Vazirmatn" }}>
-            چاشنی
+          <p className="text-2xl md:text-3xl font-bold text-amber-400 mb-4">
+            {isRtl ? "Namakdan" : "نمکدان"}
           </p>
           <p className="text-lg md:text-xl text-[#888] mb-2">
             {isRtl ? restaurant.sloganFa : restaurant.sloganEn}
           </p>
           <p className="text-sm text-[#555] max-w-md mx-auto mb-10">
             {isRtl
-              ? "urgerهای خاص، پیتزای ایتالیایی، مرغ‌های سوخاری و نوشیدنی‌های دست‌ساز"
+              ? "برگرهای خاص، پیتزای ایتالیایی، مرغ‌های سوخاری و نوشیدنی‌های دست‌ساز"
               : "Special burgers, Italian pizzas, crispy chicken & handmade drinks"}
           </p>
 
           <div className="flex items-center justify-center gap-3">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push(`/${locale}/menu`)}
+              onClick={() => router.push(locale === "fa" ? restaurantPath("/menu", slug) : "/en/menu")}
               className="flex items-center gap-2 rounded-xl bg-amber-500 text-black px-8 py-3.5 font-bold text-sm hover:bg-amber-400 transition-colors"
             >
               <Utensils size={18} />
@@ -118,7 +132,13 @@ export default function HomePage() {
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push(`/${locale}/build-burger`)}
+              onClick={() =>
+                router.push(
+                  locale === "fa"
+                    ? restaurantPath("/build-burger", slug)
+                    : "/en/build-burger",
+                )
+              }
               className="flex items-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] text-[#ccc] px-6 py-3.5 font-bold text-sm hover:border-[#555] transition-colors"
             >
               <Sparkles size={16} />
@@ -148,7 +168,7 @@ export default function HomePage() {
 
             <motion.div
               whileTap={{ scale: 0.98 }}
-              onClick={() => router.push(`/${locale}/menu`)}
+              onClick={() => router.push(locale === "fa" ? restaurantPath("/menu", slug) : "/en/menu")}
               className="relative rounded-3xl overflow-hidden bg-[#141414] border border-[#1e1e1e] cursor-pointer group"
             >
               <div className="aspect-[16/9] md:aspect-[21/9] overflow-hidden">
@@ -199,7 +219,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push(`/${locale}/menu`)}
+                onClick={() => router.push(locale === "fa" ? restaurantPath("/menu", slug) : "/en/menu")}
                 className="flex flex-col items-center gap-3 rounded-2xl bg-[#141414] border border-[#1e1e1e] p-6 hover:border-amber-500/30 transition-all group"
               >
                 <span className="text-4xl group-hover:scale-110 transition-transform">{cat.icon}</span>
@@ -230,7 +250,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => router.push(`/${locale}/menu`)}
+                onClick={() => router.push(locale === "fa" ? restaurantPath("/menu", slug) : "/en/menu")}
                 className="rounded-2xl bg-[#141414] border border-[#1e1e1e] overflow-hidden text-left hover:border-[#333] transition-all group"
               >
                 <div className="aspect-[4/3] overflow-hidden">
@@ -262,12 +282,12 @@ export default function HomePage() {
         <div className="mx-auto max-w-4xl">
           <div className="rounded-3xl bg-[#141414] border border-[#1e1e1e] p-8 md:p-12">
             <h2 className="text-2xl font-bold text-[#faf5e4] mb-4">
-              {isRtl ? "داستان چاشنی" : "The CHASHNI Story"}
+              {isRtl ? "داستان نمکدان" : "The Namakdan Story"}
             </h2>
             <p className="text-sm text-[#888] leading-relaxed mb-6">
               {isRtl
-                ? "چاشنی از عشق به غذاهای خوشمزه و باکیفیت شروع شد. ما باور داریم که هر وعده غذا باید یک تجربه خاص باشه. از مواد اولیه تازه و مرغوب استفاده می‌کنیم و هر غذا رو با دقت و عشق آماده می‌کنیم."
-                : "CHASHNI started from a love for delicious, quality food. We believe every meal should be a special experience. We use fresh, premium ingredients and prepare every dish with care and passion."}
+                ? "نمکدان از عشق به غذاهای خوشمزه و باکیفیت شروع شد. ما باور داریم که هر وعده غذا باید یک تجربه خاص باشه. از مواد اولیه تازه و مرغوب استفاده می‌کنیم و هر غذا رو با دقت و عشق آماده می‌کنیم."
+                : "Namakdan started from a love for delicious, quality food. We believe every meal should be a special experience. We use fresh, premium ingredients and prepare every dish with care and passion."}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

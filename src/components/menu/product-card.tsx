@@ -37,7 +37,7 @@ export function ProductCard({ item, onAddToCart, onOpenDetail, className }: Prod
       )}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#1a1a1a]">
-        {imgError ? (
+        {imgError || !item.image ? (
           <div className="flex h-full w-full items-center justify-center text-4xl">
             🍔
           </div>
@@ -48,6 +48,7 @@ export function ProductCard({ item, onAddToCart, onOpenDetail, className }: Prod
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgError(true)}
             loading="lazy"
+            decoding="async"
           />
         )}
 

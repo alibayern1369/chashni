@@ -55,7 +55,7 @@ export default function AccountPage() {
             <UserIcon size={32} className="text-amber-400" />
           </div>
           <h1 className="text-xl font-black text-[#faf5e4] mb-1">
-            {fullName || (isRtl ? "کاربر چاشنی" : "CHASHNI User")}
+            {fullName || (isRtl ? "کاربر نمکدان" : "Namakdan User")}
           </h1>
           <p className="text-sm text-[#888]" dir="ltr">
             {user.email}

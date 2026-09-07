@@ -11,13 +11,21 @@ const vazirmatn = Vazirmatn({
 
 export const metadata: Metadata = {
   title: {
-    default: "CHASHNI | چاشنی — Premium Restaurant",
-    template: "%s | CHASHNI چاشنی",
+    default: "نمکدان | Namakdan — Premium Restaurant",
+    template: "%s | نمکدان Namakdan",
   },
-  description: "CHASHNI — Premium QR Restaurant Experience. A mobile-first bilingual restaurant menu and ordering experience.",
+  description: "نمکدان — منوی دیجیتال و سفارش رستوران. تجربه دو زبانه موبایل‌فرست.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/namakdan/logo.svg", type: "image/svg+xml" },
+      { url: "/namakdan/logo.png", type: "image/png" },
+    ],
+    apple: "/namakdan/logo.png",
+    shortcut: "/favicon.ico",
+  },
   openGraph: {
-    title: "CHASHNI | چاشنی",
+    title: "نمکدان | Namakdan",
     description: "A Taste You Won't Forget — Premium Burgers, Pizza & More",
     type: "website",
     locale: "fa_IR",
@@ -25,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CHASHNI | چاشنی",
+    title: "نمکدان | Namakdan",
     description: "A Taste You Won't Forget — Premium Burgers, Pizza & More",
   },
 };

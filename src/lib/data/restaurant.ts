@@ -1,8 +1,8 @@
 import { Restaurant } from "../types";
 
 export const restaurant: Restaurant = {
-  nameFa: "چاشنی",
-  nameEn: "CHASHNI",
+  nameFa: "نمکدان",
+  nameEn: "Namakdan",
   sloganFa: "طعمی که فراموشش نمی‌کنی",
   sloganEn: "A Taste You Won't Forget",
   addressFa: "تهران، خیابان ولیعصر، نبش کوچه گلستان، پلاک ۱۲۰",
@@ -21,4 +21,11 @@ export const restaurant: Restaurant = {
     open: "11:00",
     close: "23:00",
   },
+};
+
+/** Default social destinations for Namakdan restaurant menu */
+export const restaurantSocial = {
+  instagram: "https://instagram.com/",
+  telegram: "https://t.me/",
+  whatsapp: "https://wa.me/982188881234",
 };

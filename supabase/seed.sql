@@ -11,14 +11,16 @@
 
 UPDATE tenants
 SET
-  name_fa = E'\u0686\u0627\u0634\u0646\u06CC',
-  name_en = 'CHASHNI',
+  name_fa = E'\u0646\u0645\u06A9\u062F\u0627\u0646',
+  name_en = 'Namakdan',
   slogan_fa = E'\u0637\u0639\u0645\u06CC \u06A9\u0647 \u0641\u0631\u0627\u0645\u0648\u0634\u0634 \u0646\u0645\u06CC\u200C\u06A9\u0646\u06CC',
   slogan_en = 'A Taste You Won''t Forget',
   phone = '021-88881234',
   address_fa = E'\u062A\u0647\u0631\u0627\u0646\u060C \u062E\u06CC\u0627\u0628\u0627\u0646 \u0648\u0644\u06CC\u0639\u0635\u0631\u060C \u0646\u0628\u0634 \u06A9\u0648\u0686\u0647 \u06AF\u0644\u0633\u062A\u0627\u0646\u060C \u067E\u0644\u0627\u06A9 120',
   address_en = 'No. 120, Valiasr St. corner of Golestan Alley, Tehran',
-  enabled_modules = ARRAY['menu','orders','tables']::TEXT[]
+  logo_url = '/namakdan/logo.svg',
+  favicon_url = '/namakdan/logo.svg',
+  enabled_modules = ARRAY['menu','orders','tables','builder','favorites']::TEXT[]
 WHERE id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 -- ─── 2. DELETE OLD SEED DATA (if any) ───────────────────────────────────────
@@ -109,9 +111,9 @@ WHERE NOT EXISTS (SELECT 1 FROM tables WHERE tenant_id='a1b2c3d4-e5f6-7890-abcd-
 
 INSERT INTO tenant_settings (tenant_id, key, value)
 VALUES
-('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'design', '{"logoEmoji":"burger","designerName":"CHASHNI Studio","designerUrl":"#"}'::JSONB),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'design', '{"logoEmoji":"salt","designerName":"Namakdan Studio","designerUrl":"#","logoUrl":"/namakdan/logo.svg"}'::JSONB),
 ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'hours', '{"open":"11:00","close":"23:00"}'::JSONB),
-('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'social', '{"instagram":"","telegram":"","whatsapp":""}'::JSONB)
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'social', '{"instagram":"https://instagram.com/","telegram":"https://t.me/","whatsapp":"https://wa.me/982188881234"}'::JSONB)
 ON CONFLICT (tenant_id, key) DO UPDATE SET value = EXCLUDED.value;
 
 -- ─── 7. BURGER COMPONENTS ───────────────────────────────────────────────────
@@ -137,12 +139,12 @@ INSERT INTO burger_components (tenant_id, category, component_id, name_fa, name_
 ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'toppings', 'top-mushroom', 'Mushroom', 'Mushroom', 18000, 15, 6),
 ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'toppings', 'top-bacon', 'Bacon-style', 'Bacon-style', 28000, 80, 7),
 ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'toppings', 'top-onion-ring', 'Onion Ring', 'Onion Ring', 18000, 45, 8),
-('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-chashni', 'CHASHNI Special', 'CHASHNI Special', 0, 60, 1),
-('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-ketchup', 'Ketchup', 'Ketchup', 0, 20, 2),
-('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-mustard', 'Mustard', 'Mustard', 0, 10, 3),
-('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-mayo', 'Mayo', 'Mayo', 0, 90, 4),
-('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-bbq', 'BBQ', 'BBQ', 8000, 50, 5),
-('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-truffle', 'Truffle Aioli', 'Truffle Aioli', 22000, 70, 6)
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-chashni', E'\u0633\u0633 \u0645\u062E\u0635\u0648\u0635 \u0646\u0645\u06A9\u062F\u0627\u0646', 'Namakdan Special', 0, 60, 1),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-ketchup', E'\u06A9\u0686\u0627\u067E', 'Ketchup', 0, 20, 2),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-mustard', E'\u062E\u0631\u062F\u0644', 'Mustard', 0, 10, 3),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-mayo', E'\u0645\u0627\u06CC\u0648\u0646\u0632', 'Mayo', 0, 90, 4),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-bbq', E'\u0628\u0627\u0631\u0628\u06CC\u06A9\u06CC\u0648', 'BBQ', 8000, 50, 5),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sauce', 'sauce-truffle', E'\u062A\u0631\u0627\u0641\u0644 \u0622\u06CC\u0648\u0644\u06CC', 'Truffle Aioli', 22000, 70, 6)
 ON CONFLICT (tenant_id, category, component_id) DO UPDATE SET
   name_fa = EXCLUDED.name_fa, name_en = EXCLUDED.name_en,
   price = EXCLUDED.price, calories = EXCLUDED.calories, sort_order = EXCLUDED.sort_order;

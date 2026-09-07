@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  <rect width="64" height="64" rx="16" fill="#0a0a0a"/>
+  <circle cx="32" cy="32" r="22" stroke="#faf5e4" stroke-width="1.75"/>
+  <!-- Stylized Noon (F) monogram -->
+  <path
+    d="M20 24.5c0-1.2.9-2.2 2.1-2.2h3.2c.7 0 1.3.3 1.7.9l6.5 9.1 2.4-3.4c.5-.7 1.3-1.1 2.2-1.1h4.8c1.2 0 2.1 1 2.1 2.2v15.6c0 1.2-.9 2.2-2.1 2.2h-3.4c-1.2 0-2.1-1-2.1-2.2V35.4l-5.8 8.2c-.4.6-1.1.9-1.8.9h-3.6c-1.4 0-2.3-1.5-1.6-2.7l7.1-10.1-4.2-5.9H22.1c-1.2 0-2.1-1-2.1-2.2z"
+    fill="#faf5e4"
+  />
+  <!-- Salt crystal accent -->
+  <path d="M44.5 18.5l2.2 3.8-2.2 3.8-2.2-3.8 2.2-3.8z" fill="#f59e0b"/>
+</svg>
