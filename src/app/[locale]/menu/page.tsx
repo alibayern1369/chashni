@@ -163,9 +163,6 @@ export default function MenuPage() {
       <CartDrawer
         isOpen={cartOpen}
         onClose={() => setCartOpen(false)}
-        onCheckout={() => {
-          setCartOpen(false);
-        }}
       />
 
       {/* Search overlay */}

@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Plus } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useLocaleContext } from "@/lib/providers/locale-provider";
 import { useMenuContext } from "@/lib/providers/data-provider";
@@ -10,6 +11,11 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { QuantityControl } from "@/components/ui/quantity-control";
 import type { BurgerCategory } from "@/lib/types";
+import {
+  DEFAULT_TENANT_SLUG,
+  pathForLocale,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -35,6 +41,16 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
     useCartContext();
   const { locale } = useLocaleContext();
   const { menuItems, burgerOptions } = useMenuContext();
+  const router = useRouter();
+  const pathname = usePathname();
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
+
+  const handleCheckout = () => {
+    onClose();
+    // Always navigate — callers may only close their local drawer state
+    router.push(pathForLocale("/checkout", locale, slug));
+    onCheckout?.();
+  };
 
   return (
     <AnimatePresence>
@@ -245,7 +261,7 @@ export function CartDrawer({ isOpen, onClose, onCheckout, className }: CartDrawe
                     variant="primary"
                     fullWidth
                     size="lg"
-                    onClick={onCheckout}
+                    onClick={handleCheckout}
                     icon={<Plus size={16} />}
                   >
                     {locale === "fa" ? "ثبت سفارش" : "Checkout"}

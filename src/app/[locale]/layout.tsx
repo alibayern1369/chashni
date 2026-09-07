@@ -84,10 +84,6 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
           <CartDrawer
             isOpen={cartOpen}
             onClose={() => setCartOpen(false)}
-            onCheckout={() => {
-              setCartOpen(false);
-              router.push(pathForLocale("/checkout", locale, slug));
-            }}
           />
 
           <SearchOverlay

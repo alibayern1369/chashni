@@ -1,19 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { CreditCard, Banknote, AlertCircle, MapPin } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
 import { useMenuContext } from "@/lib/providers/data-provider";
 import { formatPrice, calculateItemPrice, getEstimatedTime, getCustomBurgerName } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Locale } from "@/lib/types";
+import {
+  DEFAULT_TENANT_SLUG,
+  pathForLocale,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 
 export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
   const {
     items,
     table,
@@ -119,7 +126,7 @@ export default function CheckoutPage() {
 
       clearCart();
       router.push(
-        `/${locale}/order/success?id=${orderId}${table ? `&table=${table}` : ""}&time=${estimatedTime}`,
+        `${pathForLocale("/order/success", locale, slug)}?id=${orderId}${table ? `&table=${table}` : ""}&time=${estimatedTime}`,
       );
     } catch {
       setPlaceError(
@@ -141,7 +148,7 @@ export default function CheckoutPage() {
         {items.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-[#888] mb-4">{isRtl ? "سبد خرید شما خالی است" : "Your cart is empty"}</p>
-            <Button variant="primary" onClick={() => router.push(`/${locale}/menu`)}>
+            <Button variant="primary" onClick={() => router.push(pathForLocale("/menu", locale, slug))}>
               {isRtl ? "بازگشت به منو" : "Back to Menu"}
             </Button>
           </div>

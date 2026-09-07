@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { ShoppingBag, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCartContext } from "@/lib/providers/cart-provider";
@@ -11,12 +11,19 @@ import { Button } from "@/components/ui/button";
 import { QuantityControl } from "@/components/ui/quantity-control";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Locale } from "@/lib/types";
+import {
+  DEFAULT_TENANT_SLUG,
+  pathForLocale,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 
 export default function CartPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
   const { items, removeItem, updateQuantity, table, orderType, setOrderType, subtotal, discount, total, itemCount } =
     useCartContext();
   const { menuItems } = useMenuContext();
@@ -164,7 +171,7 @@ export default function CartPage() {
               variant="primary"
               fullWidth
               size="lg"
-              onClick={() => router.push(`/${locale}/checkout`)}
+              onClick={() => router.push(pathForLocale("/checkout", locale, slug))}
               icon={<Arrow size={16} />}
               iconPosition={isRtl ? "left" : "right"}
             >

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
 import { hasModule } from "@/lib/supabase/modules";
 import { createServiceClient } from "@/lib/supabase/service";
+import { menuItems as staticMenuItems } from "@/lib/data";
+import { calculateCustomBurgerPrice, normalizeCustomBurger } from "@/lib/utils";
 import type { CartItem, DBOrderType } from "@/lib/types";
 
 interface CreateOrderBody {
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
 
   // Fetch all menu items referenced in the order with their CURRENT prices
   const menuItemIds = body.items
-    .filter((i) => !i.customBurger)
+    .filter((i) => i.menuItemId !== "custom-burger" && !i.customBurger)
     .map((i) => i.menuItemId);
 
   let dbItems: any[] = [];
@@ -75,9 +77,27 @@ export async function POST(req: NextRequest) {
       return apiError("Failed to validate order items", 500);
     }
     dbItems = data ?? [];
+
+    // Also try slug match for catalog IDs that are not DB UUIDs
+    const missing = menuItemIds.filter((id) => !dbItems.some((d) => d.id === id));
+    if (missing.length > 0) {
+      const staticSlugs = missing
+        .map((id) => staticMenuItems.find((m) => m.id === id)?.slug)
+        .filter(Boolean) as string[];
+      if (staticSlugs.length > 0) {
+        const { data: bySlug } = await supabase
+          .from("menu_items")
+          .select("*")
+          .in("slug", staticSlugs)
+          .eq("tenant_id", tenant.id)
+          .eq("available", true);
+        if (bySlug?.length) dbItems = [...dbItems, ...bySlug];
+      }
+    }
   }
 
   const dbItemMap = new Map(dbItems.map((i) => [i.id, i]));
+  const dbItemBySlug = new Map(dbItems.map((i) => [i.slug, i]));
 
   let subtotal = 0;
   const snapshot: any[] = [];
@@ -87,10 +107,8 @@ export async function POST(req: NextRequest) {
     let nameFa = "";
     let nameEn = "";
 
-    if (item.customBurger) {
-      if (!hasModule(tenant, "builder")) {
-        return apiError("Burger builder module is not enabled", 403);
-      }
+    if (item.menuItemId === "custom-burger" || item.customBurger) {
+      const burger = normalizeCustomBurger(item.customBurger);
 
       const { data: components } = await supabase
         .from("burger_components")
@@ -102,43 +120,78 @@ export async function POST(req: NextRequest) {
       );
 
       const allIds = [
-        item.customBurger.bun,
-        item.customBurger.patty,
-        ...item.customBurger.cheese,
-        ...item.customBurger.toppings,
-        ...item.customBurger.sauce,
-      ];
+        burger.bun,
+        burger.patty,
+        ...burger.cheese,
+        ...burger.toppings,
+        ...burger.sauce,
+      ].filter(Boolean);
 
+      let fromDb = 0;
+      let matched = 0;
       for (const id of allIds) {
         const comp = compMap.get(id);
-        if (comp) unitPrice += comp.price;
-      }
-
-      nameFa = item.customBurger.name || "برگر سفارشی";
-      nameEn = item.customBurger.name || "Custom Burger";
-    } else {
-      const dbItem = dbItemMap.get(item.menuItemId);
-      if (!dbItem) {
-        return apiError(`Item not available: ${item.menuItemId}`, 409);
-      }
-      unitPrice = dbItem.base_price;
-      nameFa = dbItem.name_fa;
-      nameEn = dbItem.name_en;
-
-      const options = dbItem.options ?? [];
-      for (const group of options) {
-        const selected = item.selectedOptions?.[group.id] ?? [];
-        for (const opt of group.options ?? []) {
-          if (selected.includes(opt.id)) {
-            unitPrice += opt.priceModifier ?? 0;
-          }
+        if (comp) {
+          fromDb += Number(comp.price) || 0;
+          matched += 1;
         }
       }
 
-      const extras = dbItem.extras ?? [];
-      for (const ex of extras) {
-        if (item.selectedExtras?.includes(ex.id)) {
-          unitPrice += ex.price ?? 0;
+      // Prefer catalog pricing when DB components are incomplete (Namakdan static builder)
+      unitPrice =
+        matched > 0 && matched === allIds.length
+          ? fromDb
+          : calculateCustomBurgerPrice(burger);
+
+      nameFa = burger.name || "برگر سفارشی نمکدان";
+      nameEn = burger.name || "Namakdan Custom Burger";
+      item.customBurger = burger;
+    } else {
+      let dbItem = dbItemMap.get(item.menuItemId);
+      if (!dbItem) {
+        const staticItem = staticMenuItems.find((m) => m.id === item.menuItemId);
+        if (staticItem) dbItem = dbItemBySlug.get(staticItem.slug);
+      }
+
+      if (dbItem) {
+        unitPrice = dbItem.base_price;
+        nameFa = dbItem.name_fa;
+        nameEn = dbItem.name_en;
+
+        const options = dbItem.options ?? [];
+        for (const group of options) {
+          const selected = item.selectedOptions?.[group.id] ?? [];
+          for (const opt of group.options ?? []) {
+            if (selected.includes(opt.id)) {
+              unitPrice += opt.priceModifier ?? 0;
+            }
+          }
+        }
+
+        const extras = dbItem.extras ?? [];
+        for (const ex of extras) {
+          if (item.selectedExtras?.includes(ex.id)) {
+            unitPrice += ex.price ?? 0;
+          }
+        }
+      } else {
+        // Fallback: static catalog (demo / incomplete seed)
+        const staticItem = staticMenuItems.find((m) => m.id === item.menuItemId);
+        if (!staticItem || !staticItem.available) {
+          return apiError(`Item not available: ${item.menuItemId}`, 409);
+        }
+        unitPrice = staticItem.basePrice;
+        nameFa = staticItem.nameFa;
+        nameEn = staticItem.nameEn;
+
+        for (const group of staticItem.options) {
+          const selected = item.selectedOptions?.[group.id] ?? [];
+          for (const opt of group.options) {
+            if (selected.includes(opt.id)) unitPrice += opt.priceModifier;
+          }
+        }
+        for (const ex of staticItem.extras) {
+          if (item.selectedExtras?.includes(ex.id)) unitPrice += ex.price;
         }
       }
     }
