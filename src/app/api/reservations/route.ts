@@ -3,6 +3,8 @@ import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
 import { requireTenantAccess } from "@/lib/api/admin-auth";
 import { hasModule } from "@/lib/supabase/modules";
 
+const VALID_STATUSES = ["pending", "confirmed", "seated", "cancelled", "no_show"] as const;
+
 export async function GET() {
   const { tenant, supabase } = await getTenantFromRequest();
   if (!tenant) return apiError("Tenant not found", 404);
@@ -40,6 +42,24 @@ export async function POST(req: NextRequest) {
     return apiError("guest_name and reserved_at required", 400);
   }
 
+  const guestName = body.guest_name.trim();
+  if (guestName.length < 2) return apiError("guest_name too short", 400);
+
+  const partySize = body.party_size ?? 2;
+  if (partySize < 1 || partySize > 50) return apiError("party_size must be 1–50", 400);
+
+  const reservedAt = new Date(body.reserved_at);
+  if (Number.isNaN(reservedAt.getTime())) return apiError("invalid reserved_at", 400);
+
+  // Reject dates more than 1 day in the past (clock skew) or > 1 year ahead
+  const now = Date.now();
+  if (reservedAt.getTime() < now - 24 * 60 * 60 * 1000) {
+    return apiError("reserved_at must be in the future", 400);
+  }
+  if (reservedAt.getTime() > now + 365 * 24 * 60 * 60 * 1000) {
+    return apiError("reserved_at too far in the future", 400);
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -48,10 +68,10 @@ export async function POST(req: NextRequest) {
     .from("reservations")
     .insert({
       tenant_id: tenant.id,
-      guest_name: body.guest_name,
-      guest_phone: body.guest_phone ?? null,
-      party_size: body.party_size ?? 2,
-      reserved_at: body.reserved_at,
+      guest_name: guestName,
+      guest_phone: body.guest_phone?.trim() || null,
+      party_size: partySize,
+      reserved_at: reservedAt.toISOString(),
       table_id: body.table_id ?? null,
       notes: body.notes ?? null,
       user_id: user?.id ?? null,
@@ -74,6 +94,9 @@ export async function PATCH(req: NextRequest) {
 
   const body = await parseBody<{ id: string; status: string }>(req);
   if (!body?.id || !body?.status) return apiError("id and status required", 400);
+  if (!VALID_STATUSES.includes(body.status as (typeof VALID_STATUSES)[number])) {
+    return apiError("invalid status", 400);
+  }
 
   const { data, error } = await supabase
     .from("reservations")

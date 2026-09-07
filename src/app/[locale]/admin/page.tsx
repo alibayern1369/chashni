@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, X } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
 import { useMenuContext } from "@/lib/providers/data-provider";
 import type { Locale, DBOrderStatus, OrderItemSnapshot } from "@/lib/types";
@@ -27,6 +27,16 @@ const NEXT_STATUS: Record<DBOrderStatus, DBOrderStatus | null> = {
   cancelled: null,
 };
 
+const CANCELLABLE: DBOrderStatus[] = ["received", "confirmed", "preparing", "ready"];
+
+const PAYMENT_LABELS: Record<string, { fa: string; en: string; color: string }> = {
+  unpaid: { fa: "پرداخت‌نشده", en: "Unpaid", color: "text-[#888]" },
+  pending: { fa: "در انتظار پرداخت", en: "Pending", color: "text-amber-400" },
+  paid: { fa: "پرداخت‌شده", en: "Paid", color: "text-emerald-400" },
+  failed: { fa: "ناموفق", en: "Failed", color: "text-red-400" },
+  refunded: { fa: "بازگشت وجه", en: "Refunded", color: "text-sky-400" },
+};
+
 interface AdminOrder {
   id: string;
   order_number: number;
@@ -36,7 +46,11 @@ interface AdminOrder {
   total: number;
   customer_name: string | null;
   table_id: string | null;
+  payment_status?: string;
+  payment_method?: string | null;
+  notes?: string | null;
   created_at: string;
+  table?: { id: string; number: number; name: string | null } | null;
 }
 
 export default function AdminOrdersPage() {
@@ -48,9 +62,11 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<DBOrderStatus | "all">("all");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const loadOrders = useCallback(async () => {
-    setLoading(true);
+  const loadOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/admin/orders");
@@ -63,31 +79,51 @@ export default function AdminOrdersPage() {
     } catch (e) {
       setError(String(e));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     loadOrders();
+    const t = setInterval(() => loadOrders(true), 15000);
+    return () => clearInterval(t);
   }, [loadOrders]);
 
-  const advanceStatus = async (orderId: string, current: DBOrderStatus) => {
-    const next = NEXT_STATUS[current];
-    if (!next) return;
-    const res = await fetch("/api/orders/status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId, status: next }),
-    });
-    if (res.ok) {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: next } : o)),
-      );
+  const setStatus = async (orderId: string, status: DBOrderStatus) => {
+    setBusyId(orderId);
+    try {
+      const res = await fetch("/api/orders/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, status }),
+      });
+      if (res.ok) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
+        );
+      } else {
+        const data = await res.json();
+        setError(data?.error || "Status update failed");
+      }
+    } finally {
+      setBusyId(null);
     }
   };
 
   const statusCount = (s: DBOrderStatus) =>
     orders.filter((o) => o.status === s).length;
+
+  const summaryStatuses: DBOrderStatus[] = [
+    "received",
+    "confirmed",
+    "preparing",
+    "ready",
+    "served",
+    "completed",
+  ];
+
+  const visible =
+    filter === "all" ? orders : orders.filter((o) => o.status === filter);
 
   if (loading && orders.length === 0) {
     return (
@@ -104,10 +140,10 @@ export default function AdminOrdersPage() {
           {isRtl ? "سفارش‌ها" : "Orders"}
         </h2>
         <button
-          onClick={loadOrders}
+          onClick={() => loadOrders()}
           className="flex items-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-3 py-2 text-xs text-[#ccc] hover:border-[#444]"
         >
-          <RefreshCw size={14} />
+          <RefreshCw size={14} className={cn(loading && "animate-spin")} />
           {isRtl ? "به‌روزرسانی" : "Refresh"}
         </button>
       </div>
@@ -118,37 +154,53 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
-      {/* Status summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {(["received", "preparing", "ready", "completed"] as DBOrderStatus[]).map((s) => (
-          <div key={s} className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-4 text-center">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {summaryStatuses.map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setFilter((prev) => (prev === s ? "all" : s))}
+            className={cn(
+              "rounded-2xl bg-[#141414] border p-4 text-center transition-colors",
+              filter === s ? "border-amber-500/50" : "border-[#1e1e1e] hover:border-[#333]",
+            )}
+          >
             <p className="text-3xl font-black text-[#faf5e4]">{statusCount(s)}</p>
             <p className={cn("mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold", STATUS_LABELS[s].color)}>
               {isRtl ? STATUS_LABELS[s].fa : STATUS_LABELS[s].en}
             </p>
-          </div>
+          </button>
         ))}
       </div>
 
-      {/* Orders list */}
-      {orders.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-10 text-center text-sm text-[#888]">
-          {isRtl ? "هنوز سفارشی ثبت نشده است" : "No orders yet"}
+          {isRtl ? "سفارشی برای نمایش نیست" : "No orders to show"}
         </div>
       ) : (
         <div className="space-y-3">
-          {orders.map((order) => {
+          {visible.map((order) => {
             const label = STATUS_LABELS[order.status] ?? STATUS_LABELS.received;
             const next = NEXT_STATUS[order.status];
+            const pay = PAYMENT_LABELS[order.payment_status || "unpaid"] ?? PAYMENT_LABELS.unpaid;
+            const canCancel = CANCELLABLE.includes(order.status);
             return (
               <div key={order.id} className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-bold text-[#faf5e4]">
-                      #{order.order_number} {order.customer_name ? `— ${order.customer_name}` : ""}
+                      #{order.order_number}
+                      {order.customer_name ? ` — ${order.customer_name}` : ""}
+                      {order.table
+                        ? ` · ${isRtl ? "میز" : "Table"} ${order.table.number}`
+                        : ""}
                     </p>
                     <p className="text-xs text-[#666] mt-0.5">
                       {new Date(order.created_at).toLocaleString(isRtl ? "fa-IR" : "en-US")}
+                      {" · "}
+                      <span className={pay.color}>
+                        {isRtl ? pay.fa : pay.en}
+                      </span>
                     </p>
                   </div>
                   <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", label.color)}>
@@ -171,19 +223,48 @@ export default function AdminOrdersPage() {
                   })}
                 </div>
 
-                <div className="mt-3 flex items-center justify-between border-t border-[#1e1e1e] pt-3">
+                {order.notes && (
+                  <p className="mt-2 text-[11px] italic text-amber-400/80">
+                    {order.notes}
+                  </p>
+                )}
+
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#1e1e1e] pt-3">
                   <span className="text-sm font-bold text-[#faf5e4]">
                     {isRtl ? "مجموع" : "Total"}:{" "}
                     <span className="text-amber-400">{formatPrice(order.total, locale)}</span>
                   </span>
-                  {next && (
-                    <button
-                      onClick={() => advanceStatus(order.id, order.status)}
-                      className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400 transition-colors"
-                    >
-                      {isRtl ? `انتقال به: ${STATUS_LABELS[next].fa}` : `Move to ${STATUS_LABELS[next].en}`}
-                    </button>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {canCancel && (
+                      <button
+                        disabled={busyId === order.id}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              isRtl ? "لغو این سفارش؟" : "Cancel this order?",
+                            )
+                          ) {
+                            setStatus(order.id, "cancelled");
+                          }
+                        }}
+                        className="flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/20 disabled:opacity-50"
+                      >
+                        <X size={12} />
+                        {isRtl ? "لغو" : "Cancel"}
+                      </button>
+                    )}
+                    {next && (
+                      <button
+                        disabled={busyId === order.id}
+                        onClick={() => setStatus(order.id, next)}
+                        className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400 transition-colors disabled:opacity-50"
+                      >
+                        {isRtl
+                          ? `انتقال به: ${STATUS_LABELS[next].fa}`
+                          : `Move to ${STATUS_LABELS[next].en}`}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

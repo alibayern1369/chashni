@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, User as UserIcon, Loader2, Settings, Sparkles } from "lucide-react";
+import { LogOut, User as UserIcon, Loader2, Settings, Sparkles, Shield } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { restaurantPath, superPath } from "@/lib/routes";
 import type { Locale } from "@/lib/types";
@@ -15,6 +15,9 @@ export default function AccountPage() {
   const isRtl = locale === "fa";
   const { user, loading, signOut } = useAuth();
   const [loyalty, setLoyalty] = useState<{ enabled: boolean; points: number } | null>(null);
+  const [isRestaurantAdmin, setIsRestaurantAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [accessLoading, setAccessLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
@@ -24,6 +27,38 @@ export default function AccountPage() {
         if (data) setLoyalty(data);
       })
       .catch(() => {});
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setAccessLoading(false);
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      try {
+        const accessRes = await fetch("/api/admin/access");
+        if (!mounted) return;
+        if (accessRes.ok) {
+          const access = await accessRes.json();
+          setIsRestaurantAdmin(true);
+          setIsSuperAdmin(Boolean(access.isSuperAdmin));
+        } else {
+          setIsRestaurantAdmin(false);
+          setIsSuperAdmin(false);
+        }
+      } catch {
+        if (mounted) {
+          setIsRestaurantAdmin(false);
+          setIsSuperAdmin(false);
+        }
+      } finally {
+        if (mounted) setAccessLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   if (loading) {
@@ -92,19 +127,26 @@ export default function AccountPage() {
           >
             {isRtl ? "مشاهده سفارش‌ها" : "View my orders"}
           </Link>
-          <Link
-            href={restaurantPath("/admin")}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-5 py-2.5 text-sm font-medium text-[#ccc] hover:border-amber-500/30 hover:text-amber-400 transition-colors"
-          >
-            <Settings size={16} />
-            {isRtl ? "پنل مدیریت رستوران" : "Restaurant Admin"}
-          </Link>
-          <Link
-            href={superPath()}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#333] bg-[#1e1e1e] px-5 py-2.5 text-sm font-medium text-[#ccc] hover:border-amber-500/30 hover:text-amber-400"
-          >
-            سوپر ادمین
-          </Link>
+
+          {!accessLoading && isRestaurantAdmin && (
+            <Link
+              href={restaurantPath("/admin")}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-5 py-2.5 text-sm font-medium text-[#ccc] hover:border-amber-500/30 hover:text-amber-400 transition-colors"
+            >
+              <Settings size={16} />
+              {isRtl ? "پنل مدیریت رستوران" : "Restaurant Admin"}
+            </Link>
+          )}
+
+          {!accessLoading && isSuperAdmin && (
+            <Link
+              href={superPath()}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#333] bg-[#1e1e1e] px-5 py-2.5 text-sm font-medium text-[#ccc] hover:border-amber-500/30 hover:text-amber-400"
+            >
+              <Shield size={16} />
+              {isRtl ? "سوپر ادمین" : "Super Admin"}
+            </Link>
+          )}
         </div>
       </div>
     </div>

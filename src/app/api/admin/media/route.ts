@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
+import { requireAdminApi, apiError, parseBody } from "@/lib/api/helpers";
 
 /**
  * GET /api/admin/media — list media for tenant.
- * POST /api/admin/media — save a media entry (URL-based upload to storage
- * handled separately; this stores the reference + alt text).
+ * POST /api/admin/media — save a media entry by URL.
+ * DELETE /api/admin/media — delete a media row by id (?id=).
  */
 export async function GET() {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
 
   const { data, error } = await supabase
     .from("media")
@@ -26,12 +23,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase, access } = auth;
 
   const body = await parseBody<{
     file_url: string;
@@ -51,11 +45,52 @@ export async function POST(req: NextRequest) {
       file_type: body.file_type ?? null,
       file_size: body.file_size ?? null,
       alt_text: body.alt_text ?? null,
-      uploaded_by: user.id,
+      uploaded_by: access.userId,
     })
     .select()
     .single();
 
   if (error) return apiError("Failed to save media: " + error.message, 500);
   return NextResponse.json({ media: data }, { status: 201 });
+}
+
+export async function DELETE(req: NextRequest) {
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return apiError("id required", 400);
+
+  const { data: row } = await supabase
+    .from("media")
+    .select("id, file_url")
+    .eq("id", id)
+    .eq("tenant_id", tenant.id)
+    .maybeSingle();
+
+  if (!row) return apiError("Media not found", 404);
+
+  // Best-effort storage cleanup when URL is from our media bucket
+  try {
+    const marker = `/storage/v1/object/public/media/`;
+    const idx = row.file_url.indexOf(marker);
+    if (idx !== -1) {
+      const path = row.file_url.slice(idx + marker.length);
+      if (path.startsWith(tenant.id + "/")) {
+        await supabase.storage.from("media").remove([path]);
+      }
+    }
+  } catch {
+    /* ignore storage errors — row delete still proceeds */
+  }
+
+  const { error } = await supabase
+    .from("media")
+    .delete()
+    .eq("id", id)
+    .eq("tenant_id", tenant.id);
+
+  if (error) return apiError("Failed to delete media", 500);
+  return NextResponse.json({ ok: true });
 }

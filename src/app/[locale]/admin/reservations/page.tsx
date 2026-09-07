@@ -175,7 +175,15 @@ export default function AdminReservationsPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {["pending", "confirmed", "seated", "cancelled"].map((s) => (
+              {(
+                [
+                  { s: "pending", fa: "در انتظار", en: "Pending" },
+                  { s: "confirmed", fa: "تأیید", en: "Confirmed" },
+                  { s: "seated", fa: "نشسته", en: "Seated" },
+                  { s: "no_show", fa: "نیامد", en: "No-show" },
+                  { s: "cancelled", fa: "لغو", en: "Cancelled" },
+                ] as const
+              ).map(({ s, fa, en }) => (
                 <button
                   key={s}
                   onClick={() => setStatus(r.id, s)}
@@ -186,7 +194,7 @@ export default function AdminReservationsPage() {
                       : "bg-[#1e1e1e] text-[#666]",
                   )}
                 >
-                  {s}
+                  {isRtl ? fa : en}
                 </button>
               ))}
             </div>

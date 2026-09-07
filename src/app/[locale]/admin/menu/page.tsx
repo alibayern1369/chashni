@@ -25,6 +25,11 @@ interface AdminMenuItem {
   desc_en: string | null;
   base_price: number;
   image: string | null;
+  calories?: number;
+  preparation_time?: number;
+  spicy_level?: number;
+  ingredients?: { fa: string; en: string }[];
+  allergens?: { fa: string; en: string }[];
   is_bestseller: boolean;
   is_new: boolean;
   is_chef_pick: boolean;
@@ -54,6 +59,11 @@ export default function AdminMenuPage() {
     desc_en: "",
     base_price: "",
     image: "",
+    calories: "",
+    preparation_time: "15",
+    spicy_level: "0",
+    ingredients_fa: "",
+    allergens_fa: "",
     is_bestseller: false,
     is_new: false,
     is_chef_pick: false,
@@ -135,10 +145,32 @@ export default function AdminMenuPage() {
 
   const saveItem = async () => {
     if (!itemForm.category_id || !itemForm.name_fa || !itemForm.name_en) return;
+    const ingredients_fa = itemForm.ingredients_fa
+      .split(/[,،]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const allergens_fa = itemForm.allergens_fa
+      .split(/[,،]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     const body = {
-      ...itemForm,
+      category_id: itemForm.category_id,
+      name_fa: itemForm.name_fa,
+      name_en: itemForm.name_en,
+      desc_fa: itemForm.desc_fa,
+      desc_en: itemForm.desc_en,
       base_price: parseInt(itemForm.base_price, 10) || 0,
       image: itemForm.image || undefined,
+      calories: parseInt(itemForm.calories, 10) || 0,
+      preparation_time: parseInt(itemForm.preparation_time, 10) || 15,
+      spicy_level: Math.min(5, Math.max(0, parseInt(itemForm.spicy_level, 10) || 0)),
+      ingredients_fa,
+      allergens_fa,
+      is_bestseller: itemForm.is_bestseller,
+      is_new: itemForm.is_new,
+      is_chef_pick: itemForm.is_chef_pick,
+      is_vegetarian: itemForm.is_vegetarian,
+      available: itemForm.available,
     };
     const url = editItem ? `/api/admin/menu/${editItem.id}` : "/api/admin/menu";
     const method = editItem ? "PATCH" : "POST";
@@ -168,6 +200,11 @@ export default function AdminMenuPage() {
       desc_en: item.desc_en ?? "",
       base_price: String(item.base_price),
       image: item.image ?? "",
+      calories: String(item.calories ?? 0),
+      preparation_time: String(item.preparation_time ?? 15),
+      spicy_level: String(item.spicy_level ?? 0),
+      ingredients_fa: (item.ingredients ?? []).map((i) => i.fa).filter(Boolean).join("، "),
+      allergens_fa: (item.allergens ?? []).map((a) => a.fa).filter(Boolean).join("، "),
       is_bestseller: item.is_bestseller,
       is_new: item.is_new,
       is_chef_pick: item.is_chef_pick,
@@ -372,7 +409,52 @@ export default function AdminMenuPage() {
                 placeholder="https://..."
               />
             </div>
-            <div className="flex flex-wrap items-end gap-2 pb-1">
+            <div>
+              <label className="mb-1 block text-[11px] text-[#666]">{isRtl ? "کالری" : "Calories"}</label>
+              <input
+                type="number"
+                value={itemForm.calories}
+                onChange={(e) => setItemForm({ ...itemForm, calories: e.target.value })}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] text-[#666]">{isRtl ? "زمان آماده‌سازی (دقیقه)" : "Prep time (min)"}</label>
+              <input
+                type="number"
+                value={itemForm.preparation_time}
+                onChange={(e) => setItemForm({ ...itemForm, preparation_time: e.target.value })}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] text-[#666]">{isRtl ? "سطح تندی (۰–۵)" : "Spicy (0–5)"}</label>
+              <input
+                type="number"
+                min={0}
+                max={5}
+                value={itemForm.spicy_level}
+                onChange={(e) => setItemForm({ ...itemForm, spicy_level: e.target.value })}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] text-[#666]">{isRtl ? "مواد (با ویرگول)" : "Ingredients (comma-separated)"}</label>
+              <input
+                value={itemForm.ingredients_fa}
+                onChange={(e) => setItemForm({ ...itemForm, ingredients_fa: e.target.value })}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] text-[#666]">{isRtl ? "آلرژن‌ها (با ویرگول)" : "Allergens (comma-separated)"}</label>
+              <input
+                value={itemForm.allergens_fa}
+                onChange={(e) => setItemForm({ ...itemForm, allergens_fa: e.target.value })}
+                className={inputCls}
+              />
+            </div>
+            <div className="flex flex-wrap items-end gap-2 pb-1 sm:col-span-2">
               {[
                 { key: "is_bestseller", label: isRtl ? "پرطرفدار" : "Bestseller" },
                 { key: "is_new", label: isRtl ? "جدید" : "New" },
@@ -422,14 +504,23 @@ export default function AdminMenuPage() {
                   {cat.icon && <span>{cat.icon}</span>}
                   {isRtl ? cat.name_fa : cat.name_en}
                   <span className="text-[#555]">({catItems.length})</span>
-                  <span
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await fetch(`/api/admin/categories/${cat.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ is_visible: !cat.is_visible }),
+                      });
+                      if (res.ok) loadMenu();
+                    }}
                     className={cn(
                       "rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       cat.is_visible ? "bg-emerald-500/15 text-emerald-400" : "bg-[#222] text-[#666]",
                     )}
                   >
                     {isRtl ? (cat.is_visible ? "نمایش" : "مخفی") : cat.is_visible ? "Visible" : "Hidden"}
-                  </span>
+                  </button>
                 </h3>
                 <div className="flex items-center gap-1">
                   <button

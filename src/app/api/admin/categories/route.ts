@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
+import { requireAdminApi, apiError, parseBody } from "@/lib/api/helpers";
 import { slugify } from "@/lib/slug";
+import { hasModule } from "@/lib/supabase/modules";
 
 /**
  * GET /api/admin/categories — list categories for tenant (admin).
  * POST /api/admin/categories — create a category.
- * RLS enforces tenant membership; only members see/modify tenant rows.
  */
 export async function GET() {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "menu")) return apiError("Menu module disabled", 403);
 
   const { data, error } = await supabase
     .from("categories")
@@ -26,12 +24,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "menu")) return apiError("Menu module disabled", 403);
 
   const body = await parseBody<{
     name_fa: string;

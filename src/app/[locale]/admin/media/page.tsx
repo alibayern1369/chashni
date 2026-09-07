@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, Plus, Link2, Copy, Check } from "lucide-react";
+import { Loader2, Plus, Link2, Copy, Check, Trash2 } from "lucide-react";
 import type { Locale, Media } from "@/lib/types";
 
 export default function AdminMediaPage() {
@@ -62,6 +62,19 @@ export default function AdminMediaPage() {
       setTimeout(() => setCopied(null), 1500);
     } catch {
       /* ignore */
+    }
+  };
+
+  const deleteMedia = async (id: string) => {
+    if (!window.confirm(isRtl ? "حذف این تصویر؟" : "Delete this media?")) return;
+    const res = await fetch(`/api/admin/media?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      setMedia((prev) => prev.filter((m) => m.id !== id));
+    } else {
+      const data = await res.json();
+      setError(data?.error || "Delete failed");
     }
   };
 
@@ -171,6 +184,13 @@ export default function AdminMediaPage() {
               >
                 {copied === item.file_url ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
                 {isRtl ? (copied === item.file_url ? "کپی شد" : "کپی") : copied === item.file_url ? "Copied" : "Copy"}
+              </button>
+              <button
+                onClick={() => deleteMedia(item.id)}
+                className="absolute bottom-2 left-2 rounded-lg bg-black/70 p-1.5 text-red-400 backdrop-blur hover:bg-red-500/30"
+                title={isRtl ? "حذف" : "Delete"}
+              >
+                <Trash2 size={12} />
               </button>
             </div>
             <div className="p-3">

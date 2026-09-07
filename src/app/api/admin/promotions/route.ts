@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
-import { randomUUID } from "crypto";
+import { requireAdminApi, apiError, parseBody } from "@/lib/api/helpers";
+import { hasModule } from "@/lib/supabase/modules";
 
 /**
  * GET /api/admin/promotions — list promotions for tenant.
  * POST /api/admin/promotions — create a promotion code.
  */
 export async function GET() {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "orders")) return apiError("Orders module disabled", 403);
 
   const { data, error } = await supabase
     .from("promotions")
@@ -25,18 +23,16 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "orders")) return apiError("Orders module disabled", 403);
 
   const body = await parseBody<{
     code: string;
     description_fa?: string;
     description_en?: string;
-    discount_type?: "percent" | "fixed";
+    discount_type?: "percentage" | "fixed" | "percent";
     discount_value: number;
     min_order?: number;
     max_uses?: number;
@@ -46,7 +42,10 @@ export async function POST(req: NextRequest) {
   if (!body?.code || typeof body.discount_value !== "number") {
     return apiError("code and discount_value required", 400);
   }
-  if (!["percentage", "fixed"].includes(body.discount_type ?? "percentage")) {
+
+  let discountType = body.discount_type ?? "percentage";
+  if (discountType === "percent") discountType = "percentage";
+  if (!["percentage", "fixed"].includes(discountType)) {
     return apiError("invalid discount_type", 400);
   }
 
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
       code: body.code.trim().toUpperCase(),
       description_fa: body.description_fa ?? null,
       description_en: body.description_en ?? null,
-      discount_type: body.discount_type ?? "percentage",
+      discount_type: discountType,
       discount_value: body.discount_value,
       min_order: body.min_order ?? 0,
       max_uses: body.max_uses ?? null,

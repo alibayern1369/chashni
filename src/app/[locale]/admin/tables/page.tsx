@@ -1,15 +1,22 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import { Loader2, Plus, QrCode, Trash2, X } from "lucide-react";
+import { useParams, usePathname } from "next/navigation";
+import { Loader2, Plus, QrCode, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 import type { Locale, DBTable } from "@/lib/types";
 
 export default function AdminTablesPage() {
   const params = useParams();
+  const pathname = usePathname();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
   const [tables, setTables] = useState<DBTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +91,7 @@ export default function AdminTablesPage() {
       process.env.NEXT_PUBLIC_BASE_URL ||
       (typeof window !== "undefined" ? window.location.origin : "")
     ).replace(/\/+$/, "");
-    return `${base}/r/chashni/qr/${table.qr_token}`;
+    return `${base}${restaurantPath(`/qr/${table.qr_token}`, slug)}`;
   };
 
   if (loading && tables.length === 0) {

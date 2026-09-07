@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
+import { requireAdminApi, apiError, parseBody } from "@/lib/api/helpers";
 
 /**
  * GET /api/admin/settings — tenant profile + settings for editing.
- * PATCH /api/admin/settings — update tenant profile/settings.
- * RLS: only tenant owner/admin can update tenants (tenants_owner_update), but
- * tenant members can read. We gate writes via RLS.
+ * PATCH /api/admin/settings — update tenant profile/settings (owner/admin).
  */
 export async function GET() {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase, access } = auth;
 
   const { data: settings } = await supabase
     .from("tenant_settings")
     .select("*")
     .eq("tenant_id", tenant.id);
 
-  return NextResponse.json({ tenant, settings: settings ?? [] });
+  const canManage =
+    access.isSuperAdmin || access.role === "owner" || access.role === "admin";
+
+  return NextResponse.json({
+    tenant,
+    settings: settings ?? [],
+    canManage,
+    role: access.role,
+  });
 }
 
 export async function PATCH(req: NextRequest) {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("manage");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
 
   const body = await parseBody<Record<string, unknown>>(req);
   if (!body) return apiError("Invalid body", 400);
@@ -60,18 +60,18 @@ export async function PATCH(req: NextRequest) {
       .update(updates)
       .eq("id", tenant.id);
     if (error) {
-      const msg = "Failed to update tenant (owner/admin only): " + error.message;
-      return apiError(msg, 403);
+      return apiError("Failed to update tenant: " + error.message, 403);
     }
   }
 
   if (typeof body.settings === "object" && body.settings !== null) {
     const settings = body.settings as Record<string, unknown>;
     for (const [key, value] of Object.entries(settings)) {
-      await supabase.from("tenant_settings").upsert(
+      const { error } = await supabase.from("tenant_settings").upsert(
         { tenant_id: tenant.id, key, value },
         { onConflict: "tenant_id,key" },
       );
+      if (error) return apiError("Failed to update settings: " + error.message, 500);
     }
   }
 

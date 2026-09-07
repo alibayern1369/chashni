@@ -9,16 +9,23 @@ export type AdminAccess = {
   isSuperAdmin: boolean;
 };
 
+export type AdminScope = "read" | "write" | "kitchen" | "manage";
+
 const ADMIN_WRITE_ROLES: TenantMemberRole[] = ["owner", "admin", "staff"];
+const MANAGE_ROLES: TenantMemberRole[] = ["owner", "admin"];
 const KITCHEN_ROLES: TenantMemberRole[] = ["owner", "admin", "staff", "kitchen"];
 
 /**
  * Require an authenticated tenant member (or super_admin).
- * @param scope "read" | "write" | "kitchen" — write excludes pure kitchen role for menu/settings.
+ * @param scope
+ *  - read: any active member
+ *  - write: owner/admin/staff (menu, tables, CMS, media…)
+ *  - kitchen: write roles + kitchen (order status)
+ *  - manage: owner/admin only (tenant profile / branding)
  */
 export async function requireTenantAccess(
   tenant: Tenant | null,
-  scope: "read" | "write" | "kitchen" = "read",
+  scope: AdminScope = "read",
 ): Promise<{ access: AdminAccess } | { error: NextResponse }> {
   if (!tenant) return { error: apiError("Tenant not found", 404) };
 
@@ -57,6 +64,10 @@ export async function requireTenantAccess(
 
   if (scope === "write" && !ADMIN_WRITE_ROLES.includes(role)) {
     return { error: apiError("Insufficient permissions", 403) };
+  }
+
+  if (scope === "manage" && !MANAGE_ROLES.includes(role)) {
+    return { error: apiError("Owner or admin role required", 403) };
   }
 
   if (scope === "kitchen" && !KITCHEN_ROLES.includes(role)) {

@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
+import { requireAdminApi, apiError, parseBody } from "@/lib/api/helpers";
+import { hasModule } from "@/lib/supabase/modules";
+import type { createClient } from "@/lib/supabase/server";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
+}
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+async function assertBlockTenant(supabase: Supabase, blockId: string, tenantId: string) {
+  const { data: block } = await supabase
+    .from("page_blocks")
+    .select("id, page_id")
+    .eq("id", blockId)
+    .single();
+  if (!block) return null;
+  const { data: page } = await supabase
+    .from("pages")
+    .select("tenant_id")
+    .eq("id", block.page_id)
+    .single();
+  if (!page || page.tenant_id !== tenantId) return null;
+  return block;
 }
 
 /**
@@ -12,12 +32,13 @@ interface RouteContext {
  */
 export async function GET(_req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "cms")) return apiError("CMS module disabled", 403);
+
+  const owned = await assertBlockTenant(supabase, id, tenant.id);
+  if (!owned) return apiError("Block not found", 404);
 
   const { data: block, error } = await supabase
     .from("page_blocks")
@@ -26,25 +47,18 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     .single();
   if (error || !block) return apiError("Block not found", 404);
 
-  // Verify the block belongs to a page of this tenant
-  const { data: page } = await supabase
-    .from("pages")
-    .select("tenant_id")
-    .eq("id", block.page_id)
-    .single();
-  if (!page || page.tenant_id !== tenant.id) return apiError("Block not found", 404);
-
   return NextResponse.json({ block });
 }
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "cms")) return apiError("CMS module disabled", 403);
+
+  const owned = await assertBlockTenant(supabase, id, tenant.id);
+  if (!owned) return apiError("Block not found", 404);
 
   const body = await parseBody<{
     content?: Record<string, unknown>;
@@ -61,20 +75,6 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
   if (Object.keys(updates).length === 0) return apiError("No updates provided", 400);
 
-  // Verify ownership via page->tenant before update
-  const { data: block } = await supabase
-    .from("page_blocks")
-    .select("page_id")
-    .eq("id", id)
-    .single();
-  if (!block) return apiError("Block not found", 404);
-  const { data: page } = await supabase
-    .from("pages")
-    .select("tenant_id")
-    .eq("id", block.page_id)
-    .single();
-  if (!page || page.tenant_id !== tenant.id) return apiError("Not authorized", 403);
-
   const { data, error } = await supabase
     .from("page_blocks")
     .update(updates)
@@ -88,25 +88,13 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "cms")) return apiError("CMS module disabled", 403);
 
-  const { data: block } = await supabase
-    .from("page_blocks")
-    .select("page_id")
-    .eq("id", id)
-    .single();
-  if (!block) return apiError("Block not found", 404);
-  const { data: page } = await supabase
-    .from("pages")
-    .select("tenant_id")
-    .eq("id", block.page_id)
-    .single();
-  if (!page || page.tenant_id !== tenant.id) return apiError("Not authorized", 403);
+  const owned = await assertBlockTenant(supabase, id, tenant.id);
+  if (!owned) return apiError("Block not found", 404);
 
   const { error } = await supabase.from("page_blocks").delete().eq("id", id);
   if (error) return apiError("Failed to delete block", 500);

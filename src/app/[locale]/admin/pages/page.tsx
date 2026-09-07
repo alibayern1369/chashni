@@ -1,16 +1,23 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { Loader2, Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
 import type { Locale, Page } from "@/lib/types";
 
 export default function AdminPagesPage() {
   const params = useParams();
+  const pathname = usePathname();
   const router = useRouter();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +54,14 @@ export default function AdminPagesPage() {
       body: JSON.stringify(form),
     });
     if (res.ok) {
+      const data = await res.json();
       setShowCreate(false);
       setForm({ title_fa: "", title_en: "" });
-      loadPages();
+      if (data.page?.id) {
+        router.push(restaurantPath(`/admin/pages/${data.page.id}`, slug));
+      } else {
+        loadPages();
+      }
     } else {
       const data = await res.json();
       setError(data?.error || "Create failed");
@@ -63,11 +75,14 @@ export default function AdminPagesPage() {
       body: JSON.stringify({ is_published: !page.is_published }),
     });
     if (res.ok) {
-      setPages((prev) => prev.map((p) => (p.id === page.id ? { ...p, is_published: !p.is_published } : p)));
+      setPages((prev) =>
+        prev.map((p) => (p.id === page.id ? { ...p, is_published: !p.is_published } : p)),
+      );
     }
   };
 
   const deletePage = async (id: string) => {
+    if (!window.confirm(isRtl ? "حذف این صفحه؟" : "Delete this page?")) return;
     const res = await fetch(`/api/admin/pages/${id}`, { method: "DELETE" });
     if (res.ok) {
       setPages((prev) => prev.filter((p) => p.id !== id));
@@ -151,10 +166,18 @@ export default function AdminPagesPage() {
                       : "bg-[#222] text-[#666]",
                   )}
                 >
-                  {isRtl ? (page.is_published ? "منتشر شده" : "پیش‌نویس") : page.is_published ? "Published" : "Draft"}
+                  {isRtl
+                    ? page.is_published
+                      ? "منتشر شده"
+                      : "پیش‌نویس"
+                    : page.is_published
+                      ? "Published"
+                      : "Draft"}
                 </span>
               </div>
-              <p className="text-xs text-[#666]" dir="ltr">/{page.slug}</p>
+              <p className="text-xs text-[#666]" dir="ltr">
+                /{page.slug}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -165,7 +188,7 @@ export default function AdminPagesPage() {
                 {page.is_published ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
               <button
-                onClick={() => router.push(`/${locale}/admin/pages/${page.id}`)}
+                onClick={() => router.push(restaurantPath(`/admin/pages/${page.id}`, slug))}
                 className="rounded-lg bg-[#1e1e1e] border border-[#333] p-2 text-amber-400 hover:border-amber-500/40"
                 title={isRtl ? "ویرایش" : "Edit"}
               >

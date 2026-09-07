@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  requireTenantAccess,
+  type AdminAccess,
+  type AdminScope,
+} from "@/lib/api/admin-auth";
 import type { Tenant } from "@/lib/types";
 
 /**
@@ -22,6 +27,23 @@ export async function getTenantFromRequest(): Promise<{
     .single();
 
   return { tenant: (tenant as Tenant) ?? null, supabase };
+}
+
+/**
+ * Resolve tenant + enforce membership scope for /api/admin/* routes.
+ */
+export async function requireAdminApi(scope: AdminScope = "read"): Promise<
+  | {
+      tenant: Tenant;
+      supabase: Awaited<ReturnType<typeof createClient>>;
+      access: AdminAccess;
+    }
+  | { error: NextResponse }
+> {
+  const { tenant, supabase } = await getTenantFromRequest();
+  const result = await requireTenantAccess(tenant, scope);
+  if ("error" in result) return { error: result.error };
+  return { tenant: tenant!, supabase, access: result.access };
 }
 
 /**

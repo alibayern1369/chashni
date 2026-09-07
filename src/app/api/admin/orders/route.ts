@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError } from "@/lib/api/helpers";
+import { requireAdminApi, apiError } from "@/lib/api/helpers";
 import { hasModule } from "@/lib/supabase/modules";
 
 /**
- * GET /api/admin/orders — List orders for the current tenant (admin).
- * Requires authentication + tenant membership (enforced by RLS).
+ * GET /api/admin/orders — List orders for the current tenant (admin/kitchen).
  */
 export async function GET(req: NextRequest) {
-  const { tenant, supabase } = await getTenantFromRequest();
+  const auth = await requireAdminApi("kitchen");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
 
-  if (!tenant) return apiError("Tenant not found", 404);
   if (!hasModule(tenant, "orders")) return apiError("Orders module disabled", 403);
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return apiError("Authentication required", 401);
 
   const status = req.nextUrl.searchParams.get("status");
   const limit = parseInt(req.nextUrl.searchParams.get("limit") ?? "100", 10);

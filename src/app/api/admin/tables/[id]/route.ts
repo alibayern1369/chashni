@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
+import { requireAdminApi, apiError, parseBody } from "@/lib/api/helpers";
+import { hasModule } from "@/lib/supabase/modules";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -11,12 +12,10 @@ interface RouteContext {
  */
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "tables")) return apiError("Tables module disabled", 403);
 
   const body = await parseBody<{
     number?: number;
@@ -47,12 +46,10 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "tables")) return apiError("Tables module disabled", 403);
 
   const { error } = await supabase
     .from("tables")

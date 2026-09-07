@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
+import { requireAdminApi, apiError, parseBody } from "@/lib/api/helpers";
 import { slugify } from "@/lib/slug";
 import { randomUUID } from "crypto";
+import { hasModule } from "@/lib/supabase/modules";
 
 /**
  * GET /api/admin/pages — list pages (with blocks) for tenant.
  * POST /api/admin/pages — create a page (optionally with default blocks).
  */
 export async function GET() {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "cms")) return apiError("CMS module disabled", 403);
 
   const { data: pages, error } = await supabase
     .from("pages")
@@ -26,12 +25,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "cms")) return apiError("CMS module disabled", 403);
 
   const body = await parseBody<{
     title_fa: string;
@@ -69,7 +66,6 @@ export async function POST(req: NextRequest) {
 
   if (error || !page) return apiError("Failed to create page: " + (error?.message ?? ""), 500);
 
-  // Create default hero block so the page is editable immediately
   await supabase.from("page_blocks").insert([
     {
       page_id: pageId,

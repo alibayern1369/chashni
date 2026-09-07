@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowRight, Save, Check } from "lucide-react";
+import { Loader2, ArrowRight, Save, Check, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Locale } from "@/lib/types";
+import {
+  DEFAULT_TENANT_SLUG,
+  restaurantPath,
+  tenantSlugFromPathname,
+} from "@/lib/routes";
+import type { Locale, PageBlockType } from "@/lib/types";
 
 interface Block {
   id: string;
@@ -28,11 +33,24 @@ interface PageRow {
   meta_description: string | null;
 }
 
+const BLOCK_TYPES: { type: PageBlockType; fa: string; en: string }[] = [
+  { type: "hero", fa: "بخش قهرمان (Hero)", en: "Hero" },
+  { type: "text", fa: "متن", en: "Text" },
+  { type: "image", fa: "تصویر", en: "Image" },
+  { type: "gallery", fa: "گالری", en: "Gallery" },
+  { type: "features", fa: "ویژگی‌ها", en: "Features" },
+  { type: "testimonials", fa: "نظرات", en: "Testimonials" },
+  { type: "cta", fa: "دعوت به اقدام", en: "CTA" },
+  { type: "menu_highlight", fa: "هایلایت منو", en: "Menu highlight" },
+  { type: "custom_html", fa: "HTML سفارشی", en: "Custom HTML" },
+];
+
 export default function AdminPageEditor() {
   const params = useParams();
-  const router = useRouter();
+  const pathname = usePathname();
   const locale = (params.locale as Locale) || "fa";
   const isRtl = locale === "fa";
+  const slug = tenantSlugFromPathname(pathname) || DEFAULT_TENANT_SLUG;
   const pageId = params.id as string;
 
   const [page, setPage] = useState<PageRow | null>(null);
@@ -40,6 +58,7 @@ export default function AdminPageEditor() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,18 +118,35 @@ export default function AdminPageEditor() {
     });
   };
 
+  const addBlock = async (type: PageBlockType) => {
+    setAdding(true);
+    try {
+      const res = await fetch(`/api/admin/pages/${pageId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBlocks((prev) => [...prev, data.block]);
+      } else {
+        const data = await res.json();
+        setError(data?.error || "Failed to add block");
+      }
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const deleteBlock = async (blockId: string) => {
+    if (!window.confirm(isRtl ? "حذف این بلاک؟" : "Delete this block?")) return;
+    const res = await fetch(`/api/admin/blocks/${blockId}`, { method: "DELETE" });
+    if (res.ok) setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+  };
+
   const blockLabel = (type: string) => {
-    const map: Record<string, { fa: string; en: string }> = {
-      hero: { fa: "بخش قهرمان (Hero)", en: "Hero" },
-      about: { fa: "درباره ما", en: "About" },
-      features: { fa: "ویژگی‌ها", en: "Features" },
-      menu_preview: { fa: "پیش‌نمایش منو", en: "Menu Preview" },
-      gallery: { fa: "گالری", en: "Gallery" },
-      contact: { fa: "تماس", en: "Contact" },
-      cta: { fa: "دعوت به اقدام", en: "CTA" },
-      text: { fa: "متن", en: "Text" },
-    };
-    return map[type] ?? { fa: type, en: type };
+    const found = BLOCK_TYPES.find((b) => b.type === type);
+    return found ?? { fa: type, en: type };
   };
 
   if (loading) {
@@ -137,7 +173,7 @@ export default function AdminPageEditor() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
-            href={`/${locale}/admin/pages`}
+            href={restaurantPath("/admin/pages", slug)}
             className="rounded-lg bg-[#1e1e1e] border border-[#333] p-2 text-[#ccc] hover:border-[#444]"
           >
             <ArrowRight size={14} className={cn(isRtl && "rotate-180")} />
@@ -146,16 +182,22 @@ export default function AdminPageEditor() {
             <h2 className="text-lg font-bold text-[#faf5e4]">
               {isRtl ? page.title_fa : page.title_en}
             </h2>
-            <p className="text-xs text-[#666]" dir="ltr">/{page.slug}</p>
+            <p className="text-xs text-[#666]" dir="ltr">
+              /{page.slug}
+            </p>
           </div>
         </div>
-        <div className={cn("flex items-center gap-2 text-xs font-bold", saved ? "text-emerald-400" : "text-[#555]")}>
+        <div
+          className={cn(
+            "flex items-center gap-2 text-xs font-bold",
+            saved ? "text-emerald-400" : "text-[#555]",
+          )}
+        >
           <Check size={14} />
           {isRtl ? (saved ? "ذخیره شد" : "ذخیره خودکار") : saved ? "Saved" : "Auto-save"}
         </div>
       </div>
 
-      {/* Page meta */}
       <div className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-5 space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-[#666]">
           {isRtl ? "متادیتای سئو" : "SEO Meta"}
@@ -169,14 +211,30 @@ export default function AdminPageEditor() {
           />
           <input
             defaultValue={metaDesc}
-            onBlur={(e) => e.target.value !== metaDesc && savePageMeta({ meta_description: e.target.value })}
+            onBlur={(e) =>
+              e.target.value !== metaDesc && savePageMeta({ meta_description: e.target.value })
+            }
             placeholder={isRtl ? "توضیح سئو" : "SEO description"}
             className="rounded-xl bg-[#1a1a1a] border border-[#333] px-3 py-2.5 text-sm text-[#faf5e4] outline-none focus:border-amber-500/50"
           />
         </div>
       </div>
 
-      {/* Blocks */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-[#666]">{isRtl ? "افزودن بلاک:" : "Add block:"}</span>
+        {BLOCK_TYPES.map((t) => (
+          <button
+            key={t.type}
+            disabled={adding}
+            onClick={() => addBlock(t.type)}
+            className="flex items-center gap-1 rounded-lg border border-[#333] bg-[#1e1e1e] px-2.5 py-1.5 text-[11px] text-[#ccc] hover:border-amber-500/40 hover:text-amber-400 disabled:opacity-50"
+          >
+            <Plus size={12} />
+            {isRtl ? t.fa : t.en}
+          </button>
+        ))}
+      </div>
+
       <div className="space-y-4">
         {blocks.length === 0 && (
           <div className="rounded-2xl bg-[#141414] border border-[#1e1e1e] p-10 text-center text-sm text-[#888]">
@@ -194,21 +252,35 @@ export default function AdminPageEditor() {
                 block.is_visible ? "border-[#1e1e1e]" : "border-red-500/20 opacity-70",
               )}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-bold text-[#faf5e4]">
                   {isRtl ? label.fa : label.en}
                 </h3>
-                <button
-                  onClick={() => setBlockVisible(block, !block.is_visible)}
-                  className={cn(
-                    "rounded-full px-2.5 py-1 text-[10px] font-bold",
-                    block.is_visible
-                      ? "bg-emerald-500/15 text-emerald-400"
-                      : "bg-red-500/15 text-red-400",
-                  )}
-                >
-                  {isRtl ? (block.is_visible ? "نمایش" : "مخفی") : block.is_visible ? "Visible" : "Hidden"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setBlockVisible(block, !block.is_visible)}
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-[10px] font-bold",
+                      block.is_visible
+                        ? "bg-emerald-500/15 text-emerald-400"
+                        : "bg-red-500/15 text-red-400",
+                    )}
+                  >
+                    {isRtl
+                      ? block.is_visible
+                        ? "نمایش"
+                        : "مخفی"
+                      : block.is_visible
+                        ? "Visible"
+                        : "Hidden"}
+                  </button>
+                  <button
+                    onClick={() => deleteBlock(block.id)}
+                    className="rounded-lg p-1.5 text-[#666] hover:text-red-400"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -220,9 +292,8 @@ export default function AdminPageEditor() {
                   { key: "buttonText", label: isRtl ? "متن دکمه (EN)" : "Button (EN)" },
                   { key: "buttonTextFa", label: isRtl ? "متن دکمه (FA)" : "Button (FA)" },
                   { key: "imageUrl", label: isRtl ? "آدرس تصویر" : "Image URL" },
-                  { key: "imageUrlFa", label: isRtl ? "آدرس تصویر (FA)" : "Image URL (FA)" },
                 ]
-                  .filter((f) => f.key in c || block.type === "hero")
+                  .filter((f) => f.key in c || block.type === "hero" || block.type === "cta")
                   .map((f) => (
                     <div key={f.key}>
                       <label className="mb-1 block text-[11px] text-[#666]">{f.label}</label>

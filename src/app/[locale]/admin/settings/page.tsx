@@ -23,6 +23,7 @@ export default function AdminSettingsPage() {
 
   const [merchantId, setMerchantId] = useState("");
   const [modules, setModules] = useState<string[]>([]);
+  const [canManage, setCanManage] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -36,6 +37,7 @@ export default function AdminSettingsPage() {
       }
       setTenant(data.tenant);
       setModules(data.tenant?.enabled_modules ?? []);
+      setCanManage(data.canManage !== false);
       const kv: Record<string, unknown> = {};
       for (const row of data.settings as TenantSettingsRow[]) {
         kv[row.key] = row.value;
@@ -130,7 +132,13 @@ export default function AdminSettingsPage() {
           {isRtl ? "تنظیمات رستوران" : "Restaurant Settings"}
         </h2>
         <span className="rounded-full bg-[#1e1e1e] border border-[#333] px-3 py-1 text-[11px] text-[#888]">
-          {isRtl ? "فقط مالک/ادمین" : "Owner/Admin only"}
+          {isRtl
+            ? canManage
+              ? "مالک / ادمین"
+              : "فقط مشاهده — نیاز به مالک/ادمین"
+            : canManage
+              ? "Owner / Admin"
+              : "View only — owner/admin required"}
         </span>
       </div>
 
@@ -279,7 +287,7 @@ export default function AdminSettingsPage() {
 
       <button
         onClick={save}
-        disabled={saving}
+        disabled={saving || !canManage}
         className="flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-sm font-bold text-black hover:bg-amber-400 disabled:opacity-60"
       >
         {saving ? <Loader2 size={16} className="animate-spin" /> : saved ? <Check size={16} /> : <Save size={16} />}

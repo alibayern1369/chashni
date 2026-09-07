@@ -40,8 +40,8 @@ export default function KitchenDisplayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadOrders = useCallback(async () => {
-    setLoading(true);
+  const loadOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/admin/orders");
@@ -55,13 +55,13 @@ export default function KitchenDisplayPage() {
     } catch (e) {
       setError(String(e));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     loadOrders();
-    const t = setInterval(loadOrders, 15000);
+    const t = setInterval(() => loadOrders(true), 15000);
     return () => clearInterval(t);
   }, [loadOrders]);
 
@@ -101,7 +101,7 @@ export default function KitchenDisplayPage() {
           </span>
         </h2>
         <button
-          onClick={loadOrders}
+          onClick={() => loadOrders()}
           className="flex items-center gap-2 rounded-xl bg-[#1e1e1e] border border-[#333] px-3 py-2 text-xs text-[#ccc] hover:border-[#444]"
         >
           <RefreshCw size={14} />

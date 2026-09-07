@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantFromRequest, apiError, parseBody } from "@/lib/api/helpers";
+import { requireAdminApi, apiError, parseBody } from "@/lib/api/helpers";
 import { slugify } from "@/lib/slug";
+import { hasModule } from "@/lib/supabase/modules";
 
 interface MenuItemInput {
   category_id: string;
@@ -21,7 +22,10 @@ interface MenuItemInput {
   ingredients_en?: string[];
   allergens_fa?: string[];
   allergens_en?: string[];
+  options?: unknown[];
+  extras?: unknown[];
   available?: boolean;
+  sort_order?: number;
 }
 
 function toDBInput(body: MenuItemInput, tenantId: string) {
@@ -54,10 +58,10 @@ function toDBInput(body: MenuItemInput, tenantId: string) {
     is_chef_pick: body.is_chef_pick ?? false,
     ingredients,
     allergens,
-    options: [],
-    extras: [],
+    options: Array.isArray(body.options) ? body.options : [],
+    extras: Array.isArray(body.extras) ? body.extras : [],
     available: body.available ?? true,
-    sort_order: 0,
+    sort_order: body.sort_order ?? 0,
   };
 }
 
@@ -66,17 +70,16 @@ function toDBInput(body: MenuItemInput, tenantId: string) {
  * POST /api/admin/menu — create a menu item.
  */
 export async function GET() {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "menu")) return apiError("Menu module disabled", 403);
 
   const { data, error } = await supabase
     .from("menu_items")
     .select("*, categories:category_id(id, slug, name_fa, name_en)")
     .eq("tenant_id", tenant.id)
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 
   if (error) return apiError("Failed to load menu items", 500);
@@ -84,12 +87,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { tenant, supabase } = await getTenantFromRequest();
-  if (!tenant) return apiError("Tenant not found", 404);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return apiError("Authentication required", 401);
+  const auth = await requireAdminApi("write");
+  if ("error" in auth) return auth.error;
+  const { tenant, supabase } = auth;
+  if (!hasModule(tenant, "menu")) return apiError("Menu module disabled", 403);
 
   const body = await parseBody<MenuItemInput>(req);
   if (!body?.category_id || !body?.name_fa || !body?.name_en) {
