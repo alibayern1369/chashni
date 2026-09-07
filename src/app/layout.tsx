@@ -53,7 +53,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fa" dir="rtl" className={`h-full antialiased ${vazirmatn.variable}`}>
-      <body className="min-h-full flex flex-col bg-[#0a0a0a]">{children}</body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }
